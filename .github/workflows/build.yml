@@ -1,0 +1,30 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup npm cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Build
+        run: make zip-file
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          path: pop-shell@system76.com_*.zip
+          if-no-files-found: error
+          archive: false
