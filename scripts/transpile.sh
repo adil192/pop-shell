@@ -22,10 +22,10 @@ glib-compile-schemas schemas &
 
 for proj in ${PROJECTS}; do
     mkdir -p _build/"${proj}"
-    tsc --p src/"${proj}"
+    npx tsc --p src/"${proj}"
 done
 
-tsc
+npx tsc
 
 wait
 

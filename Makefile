@@ -35,6 +35,7 @@ configure:
 	sh scripts/configure.sh
 
 compile: $(sources) clean
+	npm i
 	env PROJECTS="$(PROJECTS)" ./scripts/transpile.sh
 
 # Rebuild, install, reconfigure local settings, restart shell, and listen to journalctl logs
@@ -42,9 +43,9 @@ debug: depcheck compile install configure enable restart-shell listen
 
 depcheck:
 	@echo depcheck
-	@if ! command -v tsc >/dev/null; then \
+	@if ! command -v npm >/dev/null || ! command -v npx >/dev/null; then \
 		echo \
-		echo 'You must install TypeScript >= 3.8 to transpile: (node-typescript on Debian systems)'; \
+		echo 'You must install Node.js: ("sudo apt install npm" on Debian systems)'; \
 		exit 1; \
 	fi
 

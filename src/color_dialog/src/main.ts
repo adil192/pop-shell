@@ -18,7 +18,7 @@ function getExtensionPath(uuid: string) {
     for (let i = 0; i < EXT_PATH_DEFAULTS.length; i++) {
         let path = EXT_PATH_DEFAULTS[i];
         let file = Gio.File.new_for_path(path + uuid);
-        log(file.get_path());
+        log(file.get_path()!);
         if (file.query_exists(null)) {
             ext_path = file;
             break;
@@ -37,8 +37,8 @@ function getSettings(schema: string) {
     const schemaDir = extensionPath.get_child('schemas');
 
     let schemaSource = schemaDir.query_exists(null)
-        ? GioSSS.new_from_directory(schemaDir.get_path(), GioSSS.get_default(), false)
-        : GioSSS.get_default();
+        ? GioSSS.new_from_directory(schemaDir.get_path()!, GioSSS.get_default(), false)
+        : GioSSS.get_default()!;
 
     const schemaObj = schemaSource.lookup(schema, true);
 

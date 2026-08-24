@@ -2,21 +2,23 @@
     "version": "1.2.0",
     "compileOnSave": true,
     "compilerOptions": {
-        "target": "es2020",
+        "target": "ES2023",
         "strict": true,
         "outDir": "./target",
         "rootDir": "./src",
         "forceConsistentCasingInFileNames": true,
         "lib": [
-            "es2020"
+            "ES2023"
         ],
+        "skipLibCheck": true,
         "pretty": true,
         "removeComments": true,
         "incremental": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "moduleResolution": "NodeNext",
-        "module": "NodeNext"
+        "module": "NodeNext",
+        "sourceMap": false,
     },
     "include": [
         "src/*.ts"

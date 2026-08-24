@@ -1,3 +1,16 @@
 {
-    "type": "module"
+    "name": "pop-shell",
+    "type": "module",
+    "private": true,
+    "sideEffects": false,
+    "dependencies": {
+        "@girs/giounix-2.0": "^4.1.0",
+        "@girs/gjs": "^4.1.0",
+        "@girs/gnome-shell": "^50.0.4",
+        "@girs/gtk-3.0": "^4.1.0",
+        "@girs/mtk-18": "^4.1.0"
+    },
+    "devDependencies": {
+        "typescript": "^7.0.2"
+    }
 }

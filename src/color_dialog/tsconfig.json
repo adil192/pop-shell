@@ -1,17 +1,26 @@
 {
     "compileOnSave": true,
     "compilerOptions": {
-        "target": "es2015",
+        "target": "ES2023",
         "strict": true,
         "outDir": "../../target/color_dialog",
         "rootDir": "./src",
         "forceConsistentCasingInFileNames": true,
-        "lib": ["es2015"],
+        "lib": [
+            "ES2023"
+        ],
+        "skipLibCheck": true,
         "pretty": true,
         "removeComments": true,
         "incremental": true,
         "noUnusedLocals": true,
-        "noUnusedParameters": true
+        "noUnusedParameters": true,
+        "moduleResolution": "NodeNext",
+        "module": "NodeNext",
+        "sourceMap": false,
     },
-    "include": ["src/*.ts"]
+    "include": [
+        "src/*.ts",
+        "../ambient.d.ts"
+    ]
 }
