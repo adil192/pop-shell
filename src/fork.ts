@@ -1,19 +1,19 @@
+import Mtk from 'gi://Mtk';
+
 import type { Forest } from './forest.js';
 import type { Entity } from './ecs.js';
 import type { Ext } from './extension.js';
-import type { Rectangle } from './rectangle.js';
 import type { Node } from './node.js';
 
 import * as Ecs from './ecs.js';
 import * as Lib from './lib.js';
 import * as node from './node.js';
-import * as Rect from './rectangle.js';
 import { ShellWindow } from './window.js';
 
-const XPOS = 0;
-const YPOS = 1;
-const WIDTH = 2;
-const HEIGHT = 3;
+const XPOS = 'x' as const;
+const YPOS = 'y' as const;
+const WIDTH = 'width' as const;
+const HEIGHT = 'height' as const;
 
 /** A tiling fork contains two children nodes.
  *
@@ -22,7 +22,7 @@ const HEIGHT = 3;
 export class Fork {
     left: Node;
     right: Node | null;
-    area: Rectangle;
+    area: Mtk.Rectangle;
     entity: Entity;
     on_primary_display: boolean;
     workspace: number;
@@ -45,7 +45,7 @@ export class Fork {
         entity: Entity,
         left: Node,
         right: Node | null,
-        area: Rectangle,
+        area: Mtk.Rectangle,
         workspace: WorkspaceID,
         monitor: MonitorID,
         orient: Lib.Orientation,
@@ -63,27 +63,27 @@ export class Fork {
     }
 
     /** The calculated left area of this fork */
-    area_of_left(ext: Ext): Rect.Rectangle {
-        return new Rect.Rectangle(
-            this.is_horizontal()
-                ? [this.area.x, this.area.y, this.length_left - ext.gap_inner_half, this.area.height]
-                : [this.area.x, this.area.y, this.area.width, this.length_left - ext.gap_inner_half],
-        );
+    area_of_left(ext: Ext): Mtk.Rectangle {
+        let { x, y, width, height } = this.area;
+        if (this.is_horizontal()) {
+            width = this.length_left - ext.gap_inner_half;
+        } else {
+            height = this.length_left - ext.gap_inner_half;
+        }
+        return new Mtk.Rectangle({ x, y, width, height });
     }
 
     /** The calculated right area of this fork */
-    area_of_right(ext: Ext): Rect.Rectangle {
-        let area: [number, number, number, number];
-
+    area_of_right(ext: Ext): Mtk.Rectangle {
+        let { x, y, width, height } = this.area;
         if (this.is_horizontal()) {
-            const width = this.area.width - this.length_left + ext.gap_inner;
-            area = [width, this.area.y, this.area.width - width, this.area.height];
+            x = x + this.length_left + ext.gap_inner_half;
+            width = width - this.length_left - ext.gap_inner_half;
         } else {
-            const height = this.area.height - this.length_left + ext.gap_inner;
-            area = [this.area.x, height, this.area.width, this.area.height - height];
+            y = y + this.length_left + ext.gap_inner_half;
+            height = height - this.length_left - ext.gap_inner_half;
         }
-
-        return new Rect.Rectangle(area);
+        return new Mtk.Rectangle({ x, y, width, height });
     }
 
     depth(): number {
@@ -184,7 +184,7 @@ export class Fork {
     }
 
     /** Sets a new area for this fork */
-    set_area(area: Rectangle): Rectangle {
+    set_area(area: Mtk.Rectangle): Mtk.Rectangle {
         this.area = area;
         return this.area;
     }
@@ -209,7 +209,7 @@ export class Fork {
     }
 
     /** Calculates the future arrangement of windows in this fork */
-    measure(tiler: Forest, ext: Ext, area: Rectangle, record: (win: Entity, parent: Entity, area: Rectangle) => void) {
+    measure(tiler: Forest, ext: Ext, area: Mtk.Rectangle, record: (win: Entity, parent: Entity, area: Mtk.Rectangle) => void) {
         let ratio = null;
 
         let manually_moved = ext.grab_op !== null || ext.tiler.resizing_window;
@@ -222,7 +222,7 @@ export class Fork {
                 ratio = this.length_left / this.length();
             }
 
-            this.area = this.set_area(area.clone());
+            this.area = this.set_area(area.copy());
         } else if (this.orientation_changed) {
             this.orientation_changed = false;
             ratio = this.length_left / this.depth();
@@ -238,9 +238,9 @@ export class Fork {
         if (this.right) {
             const [l, p, startpos] = this.is_horizontal() ? [WIDTH, XPOS, this.area.x] : [HEIGHT, YPOS, this.area.y];
 
-            let region = this.area.clone();
+            let region = this.area.copy();
 
-            const half = this.area.array[l] / 2;
+            const half = this.area[l] / 2;
 
             let length;
             if (this.length_left > half - 32 && this.length_left < half + 32) {
@@ -251,12 +251,12 @@ export class Fork {
                 if (length == 0) length = 32;
             }
 
-            region.array[l] = length - ext.gap_inner_half;
+            region[l] = length - ext.gap_inner_half;
 
             this.left.measure(tiler, ext, this.entity, region, record);
 
-            region.array[p] = region.array[p] + length + ext.gap_inner_half;
-            region.array[l] = this.area.array[l] - length - ext.gap_inner_half;
+            region[p] = region[p] + length + ext.gap_inner_half;
+            region[l] = this.area[l] - length - ext.gap_inner_half;
 
             this.right.measure(tiler, ext, this.entity, region, record);
         } else {
@@ -264,7 +264,7 @@ export class Fork {
         }
     }
 
-    migrate(ext: Ext, forest: Forest, area: Rectangle, monitor: number, workspace: number) {
+    migrate(ext: Ext, forest: Forest, area: Mtk.Rectangle, monitor: number, workspace: number) {
         if (ext.auto_tiler && this.is_toplevel) {
             const primary = global.display.get_primary_monitor() === monitor;
 
@@ -321,7 +321,7 @@ export class Fork {
             area.width -= ext.gap_outer * 2;
             area.height -= ext.gap_outer * 2;
 
-            this.set_area(area.clone());
+            this.set_area(area.copy());
             this.measure(forest, ext, area, forest.on_record());
             forest.arrange(ext, workspace, true);
 

@@ -1,5 +1,3 @@
-import * as Utils from './utils.js';
-
 import type { Ext } from './extension.js';
 
 import Clutter from 'gi://Clutter';
@@ -14,7 +12,6 @@ import {
 } from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import { Button } from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import GLib from 'gi://GLib';
-import { spawn } from 'resource:///org/gnome/shell/misc/util.js';
 import { get_current_path } from './paths.js';
 // import * as Settings from './settings.js';
 
@@ -87,10 +84,8 @@ export class Indicator {
         bm.addMenuItem(settings_button(bm));
         bm.addMenuItem(menu_separator(''));
 
-        if (!Utils.is_wayland()) {
-            this.toggle_titles = show_title(ext);
-            bm.addMenuItem(this.toggle_titles);
-        }
+        this.toggle_titles = show_title(ext);
+        bm.addMenuItem(this.toggle_titles);
 
         bm.addMenuItem(this.toggle_active);
         bm.addMenuItem(this.border_radius);
@@ -113,12 +108,16 @@ function menu_separator(text: any): any {
 function settings_button(menu: any): any {
     let item = new PopupMenuItem(_('View All'));
     item.connect('activate', () => {
-        let path: string | null = GLib.find_program_in_path('pop-shell-shortcuts');
-        if (path) {
-            spawn([path]);
-        } else {
-            spawn(['xdg-open', 'https://support.system76.com/articles/pop-keyboard-shortcuts/']);
-        }
+        let path = GLib.find_program_in_path('pop-shell-shortcuts');
+        let [_success, _pid] = GLib.spawn_async(
+            null,
+            path
+                ? [path]
+                : ['xdg-open', 'https://support.system76.com/articles/pop-keyboard-shortcuts/'],
+            null,
+            GLib.SpawnFlags.SEARCH_PATH,
+            null,
+        );
 
         menu.close();
     });
@@ -160,12 +159,16 @@ function shortcuts(menu: any): any {
     let item = new PopupBaseMenuItem();
     item.add_child(widget);
     item.connect('activate', () => {
-        let path: string | null = GLib.find_program_in_path('pop-shell-shortcuts');
-        if (path) {
-            spawn([path]);
-        } else {
-            spawn(['xdg-open', 'https://support.system76.com/articles/pop-keyboard-shortcuts/']);
-        }
+        let path = GLib.find_program_in_path('pop-shell-shortcuts');
+        let [_success, _pid] = GLib.spawn_async(
+            null,
+            path
+                ? [path]
+                : ['xdg-open', 'https://support.system76.com/articles/pop-keyboard-shortcuts/'],
+            null,
+            GLib.SpawnFlags.SEARCH_PATH,
+            null,
+        );
 
         menu.close();
     });
@@ -247,10 +250,10 @@ function number_entry(
             symbol == 65293 // enter key
                 ? parse_number(text.text)
                 : symbol == 65361 // left key
-                ? clamp(parse_number(text.text) - 1, min, max)
-                : symbol == 65363 // right key
-                ? clamp(parse_number(text.text) + 1, min, max)
-                : null;
+                    ? clamp(parse_number(text.text) - 1, min, max)
+                    : symbol == 65363 // right key
+                        ? clamp(parse_number(text.text) + 1, min, max)
+                        : null;
 
         if (number !== null) {
             text.set_text(String(number));

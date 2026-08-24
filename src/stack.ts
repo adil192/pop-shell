@@ -9,6 +9,8 @@ import * as utils from './utils.js';
 const Arena = a.Arena;
 import Clutter from 'gi://Clutter';
 import GObject from 'gi://GObject';
+import Meta from 'gi://Meta';
+import Mtk from 'gi://Mtk';
 import St from 'gi://St';
 
 const ACTIVE_TAB = 'pop-shell-tab pop-shell-tab-active';
@@ -65,6 +67,8 @@ const TabButton = GObject.registerClass(
         Signals: { activate: {} },
     },
     class TabButton extends St.Button {
+        _title?: St.Label;
+
         _init(window: ShellWindow) {
             const icon = window.icon(window.ext, 24);
             icon.set_x_align(Clutter.ActorAlign.START);
@@ -142,11 +146,11 @@ export class Stack {
 
     tabs_height: number = TAB_HEIGHT;
 
-    stack_rect: Rectangular = { width: 0, height: 0, x: 0, y: 0 };
+    stack_rect: Mtk.Rectangle = new Mtk.Rectangle({ x: 0, y: 0, width: 0, height: 0 });
 
     private active_signals: [SignalID, SignalID] | null = null;
 
-    private rect: Rectangular = { width: 0, height: 0, x: 0, y: 0 };
+    private rect: Mtk.Rectangle = new Mtk.Rectangle({ x: 0, y: 0, width: 0, height: 0 });
 
     private restacker: SignalID = global.display.connect('restacked', () => this.restack());
 
@@ -230,7 +234,7 @@ export class Stack {
             let name;
 
             this.window_exec(id, component.entity, (window) => {
-                const actor = window.meta.get_compositor_private();
+                const actor = window.meta.get_compositor_private<Clutter.Actor>();
 
                 if (Ecs.entity_eq(entity, component.entity)) {
                     this.active_id = id;
@@ -373,7 +377,7 @@ export class Stack {
         const window = this.ext.windows.get(c.entity);
         if (window) {
             for (const s of c.signals) window.meta.disconnect(s);
-            if (this.workspace === this.ext.active_workspace()) window.meta.get_compositor_private()?.show();
+            if (this.workspace === this.ext.active_workspace()) window.meta.get_compositor_private<Clutter.Actor>()?.show();
         }
 
         c.signals = [];
@@ -410,7 +414,7 @@ export class Stack {
             if (this.workspace === this.ext.active_workspace()) {
                 const win = this.ext.windows.get(c.entity);
                 if (win) {
-                    win.meta.get_compositor_private()?.show();
+                    win.meta.get_compositor_private<Clutter.Actor>()?.show();
                     win.stack = null;
                 }
             }
@@ -419,7 +423,7 @@ export class Stack {
         for (const b of this.buttons.values()) {
             try {
                 b.destroy();
-            } catch (e) {}
+            } catch (e) { }
         }
 
         if (this.widgets) {
@@ -434,7 +438,7 @@ export class Stack {
             if (Ecs.entity_eq(this.ext.grab_op.entity, this.active)) {
                 if (this.widgets) {
                     const parent = this.widgets.tabs.get_parent();
-                    const actor = this.active_meta()?.get_compositor_private();
+                    const actor = this.active_meta()?.get_compositor_private<Clutter.Actor>();
                     if (actor && parent) {
                         parent.set_child_below_sibling(this.widgets.tabs, actor);
                     }
@@ -523,7 +527,7 @@ export class Stack {
     replace(window: ShellWindow) {
         if (!this.widgets) return;
         const c = this.tabs[this.active_id],
-            actor = window.meta.get_compositor_private();
+            actor = window.meta.get_compositor_private<Clutter.Actor>();
         if (c && actor) {
             this.tab_disconnect(c);
 
@@ -547,7 +551,7 @@ export class Stack {
         const window = this.ext.windows.get(this.active);
         if (!window) return;
 
-        const actor = window.meta.get_compositor_private();
+        const actor = window.meta.get_compositor_private<Clutter.Actor>();
         if (!actor) {
             this.active_disconnect();
             return;
@@ -630,19 +634,19 @@ export class Stack {
     }
 
     /** Updates the dimensions and positions of the stack's actors */
-    update_positions(rect: Rectangular) {
+    update_positions(rect: Mtk.Rectangle) {
         if (!this.widgets) return;
 
         this.rect = rect;
 
         this.tabs_height = TAB_HEIGHT * this.ext.dpi;
 
-        this.stack_rect = {
+        this.stack_rect = new Mtk.Rectangle({
             x: rect.x,
             y: rect.y - this.tabs_height,
             width: rect.width,
             height: this.tabs_height + rect.height,
-        };
+        });
 
         this.widgets.tabs.x = rect.x;
         this.widgets.tabs.y = this.stack_rect.y;
@@ -664,7 +668,7 @@ export class Stack {
         c.button_signal = widget.connect('clicked', () => {
             this.activate(entity);
             this.window_exec(comp, entity, (window) => {
-                const actor = window.meta.get_compositor_private();
+                const actor = window.meta.get_compositor_private<Clutter.Actor>();
                 if (actor) {
                     actor.show();
                     window.activate(false);
@@ -709,7 +713,7 @@ export class Stack {
 
     private actor_exec(comp: number, entity: Entity, func: (window: Clutter.Actor) => void) {
         this.window_exec(comp, entity, (window) => {
-            func(window.meta.get_compositor_private() as Clutter.Actor);
+            func(window.meta.get_compositor_private<Clutter.Actor>() as Clutter.Actor);
         });
     }
 

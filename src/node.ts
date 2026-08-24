@@ -1,9 +1,10 @@
+import Mtk from 'gi://Mtk';
+
 import * as Ecs from './ecs.js';
 
 import type { Forest } from './forest.js';
 import type { Entity } from './ecs.js';
 import type { Ext } from './extension.js';
-import type { Rectangle } from './rectangle.js';
 import type { Stack } from './stack.js';
 import { ShellWindow } from './window.js';
 
@@ -35,7 +36,7 @@ export interface NodeStack {
     kind: 3;
     idx: number;
     entities: Array<Entity>;
-    rect: Rectangle | null;
+    rect: Mtk.Rectangle | null;
 }
 
 function stack_detach(node: NodeStack, stack: Stack, idx: number) {
@@ -209,8 +210,8 @@ export class Node {
         tiler: Forest,
         ext: Ext,
         parent: Entity,
-        area: Rectangle,
-        record: (win: Entity, parent: Entity, area: Rectangle) => void,
+        area: Mtk.Rectangle,
+        record: (win: Entity, parent: Entity, area: Mtk.Rectangle) => void,
     ) {
         switch (this.inner.kind) {
             // Fork
@@ -224,13 +225,13 @@ export class Node {
                 break;
             // Window
             case 2:
-                record(this.inner.entity, parent, area.clone());
+                record(this.inner.entity, parent, area.copy());
                 break;
             // Stack
             case 3:
                 const size = ext.dpi * 4;
 
-                this.inner.rect = area.clone();
+                this.inner.rect = area.copy();
                 this.inner.rect.y += size * 6;
                 this.inner.rect.height -= size * 6;
 

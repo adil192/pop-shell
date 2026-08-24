@@ -1,18 +1,19 @@
+import Mtk from 'gi://Mtk';
+
 import * as Movement from './movement.js';
 
 import type { Entity } from './ecs.js';
-import type { Rectangle } from './rectangle.js';
 
 export class GrabOp {
     entity: Entity;
-    rect: Rectangle;
+    rect: Mtk.Rectangle;
 
-    constructor(entity: Entity, rect: Rectangle) {
+    constructor(entity: Entity, rect: Mtk.Rectangle) {
         this.entity = entity;
         this.rect = rect;
     }
 
-    operation(change: Rectangle): Movement.Movement {
+    operation(change: Mtk.Rectangle): Movement.Movement {
         return Movement.calculate(this.rect, change);
     }
 }

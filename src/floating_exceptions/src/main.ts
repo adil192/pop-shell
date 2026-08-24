@@ -1,6 +1,7 @@
 #!/usr/bin/gjs --module
 
 import Gio from 'gi://Gio';
+import GioUnix from 'gi://GioUnix';
 import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk?version=3.0';
 import Pango from 'gi://Pango';
@@ -79,7 +80,7 @@ function exceptions_button(): any {
 export class MainView implements View {
     widget: any;
 
-    callback: (event: Event) => void = () => {};
+    callback: (event: Event) => void = () => { };
 
     private list: any;
 
@@ -122,7 +123,7 @@ export class MainView implements View {
     }
 
     add_rule(wmclass: string | undefined, wmtitle: string | undefined) {
-        let label = Gtk.Label.new(wmtitle === undefined ? wmclass : `${wmclass} / ${wmtitle}`);
+        let label = Gtk.Label.new(wmtitle === undefined ? wmclass ?? null : `${wmclass} / ${wmtitle}`);
         label.set_xalign(0);
         label.set_hexpand(true);
         label.set_ellipsize(Pango.EllipsizeMode.END);
@@ -148,7 +149,7 @@ export class MainView implements View {
 
 export class ExceptionsView implements View {
     widget: any;
-    callback: (event: Event) => void = () => {};
+    callback: (event: Event) => void = () => { };
 
     exceptions: any = Gtk.ListBox.new();
 
@@ -181,7 +182,7 @@ export class ExceptionsView implements View {
     }
 
     add_rule(wmclass: string | undefined, wmtitle: string | undefined, enabled: boolean) {
-        let label = Gtk.Label.new(wmtitle === undefined ? wmclass : `${wmclass} / ${wmtitle}`);
+        let label = Gtk.Label.new(wmtitle === undefined ? wmclass ?? null : `${wmclass} / ${wmtitle}`);
         label.set_xalign(0);
         label.set_hexpand(true);
         label.set_ellipsize(Pango.EllipsizeMode.END);
@@ -220,7 +221,7 @@ class App {
 
         const TITLE = 'Floating Window Exceptions';
 
-        let win = new Gtk.Dialog({ use_header_bar: true });
+        let win = new Gtk.Dialog({ use_header_bar: 1 });
         let headerbar = win.get_header_bar();
         headerbar.set_show_close_button(true);
         headerbar.set_title(TITLE);
@@ -306,7 +307,7 @@ function list_header_func(row: any, before: null | any) {
 
 /** We'll use stdout for printing events for the shell to handle */
 const STDOUT = new Gio.DataOutputStream({
-    base_stream: new Gio.UnixOutputStream({ fd: 1 }),
+    base_stream: new GioUnix.OutputStream({ fd: 1 }),
 });
 
 /** Utility function for printing a message to stdout with an added newline */

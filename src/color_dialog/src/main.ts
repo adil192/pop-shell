@@ -38,9 +38,9 @@ function getSettings(schema: string) {
 
     let schemaSource = schemaDir.query_exists(null)
         ? GioSSS.new_from_directory(schemaDir.get_path()!, GioSSS.get_default(), false)
-        : GioSSS.get_default()!;
+        : GioSSS.get_default();
 
-    const schemaObj = schemaSource.lookup(schema, true);
+    const schemaObj = schemaSource?.lookup(schema, true);
 
     if (!schemaObj) {
         throw new Error('Schema ' + schema + ' could not be found for extension ');

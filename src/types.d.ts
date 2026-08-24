@@ -3,3 +3,5 @@ type MonitorID = number;
 
 /** The ID of a workspace in GNOME Shell */
 type WorkspaceID = number;
+
+type SignalID = number;

@@ -1,3 +1,6 @@
+import Clutter from 'gi://Clutter';
+import Mtk from 'gi://Mtk';
+
 import * as ecs from './ecs.js';
 import * as lib from './lib.js';
 import * as log from './log.js';
@@ -11,7 +14,6 @@ import type { Entity } from './ecs.js';
 import type { Ext } from './extension.js';
 import type { Forest, MoveBy, MoveByCursor } from './forest.js';
 import type { Fork } from './fork.js';
-import type { Rectangle } from './rectangle.js';
 import type { Result } from './result.js';
 import type { ShellWindow } from './window.js';
 
@@ -87,8 +89,8 @@ export class AutoTiler {
         a_win.stack = b_stack;
         b_win.stack = a_stack;
 
-        a_win.meta.get_compositor_private()?.show();
-        b_win.meta.get_compositor_private()?.show();
+        a_win.meta.get_compositor_private<Clutter.Actor>()?.show();
+        b_win.meta.get_compositor_private<Clutter.Actor>()?.show();
 
         this.tile(ext, a_fork, a_fork.area);
         this.tile(ext, b_fork, b_fork.area);
@@ -113,7 +115,7 @@ export class AutoTiler {
             }
         }
 
-        fork.area = fork.set_area(rect.clone());
+        fork.area = fork.set_area(rect.copy());
         fork.length_left = Math.round(fork.prev_ratio * fork.length());
         this.tile(ext, fork, fork.area);
     }
@@ -129,7 +131,7 @@ export class AutoTiler {
             rect.height -= ext.gap_outer * 2;
         }
 
-        const [entity, fork] = this.forest.create_toplevel(win.entity, rect.clone(), workspace_id);
+        const [entity, fork] = this.forest.create_toplevel(win.entity, rect.copy(), workspace_id);
         this.forest.on_attach(entity, win.entity);
         fork.smart_gapped = smart_gaps;
         win.smart_gapped = smart_gaps;
@@ -163,7 +165,7 @@ export class AutoTiler {
                     fork.set_area(rect);
                 }
 
-                this.tile(ext, fork, fork.area.clone());
+                this.tile(ext, fork, fork.area.copy());
                 return true;
             } else {
                 log.error(`missing monitor association for Window(${attachee.entity})`);
@@ -268,7 +270,7 @@ export class AutoTiler {
                 if (fork.left.inner.kind === 2 && fork.right && fork.right.inner.kind === 2) {
                     if (fork.left.is_window(win)) {
                         const sibling = ext.windows.get(fork.right.inner.entity);
-                        if (sibling && sibling.rect().contains(cursor)) {
+                        if (sibling && sibling.rect().contains_rect(cursor)) {
                             if (swap) {
                                 fork.left.inner.entity = fork.right.inner.entity;
                                 fork.right.inner.entity = win;
@@ -280,7 +282,7 @@ export class AutoTiler {
                         }
                     } else if (fork.right.is_window(win)) {
                         const sibling = ext.windows.get(fork.left.inner.entity);
-                        if (sibling && sibling.rect().contains(cursor)) {
+                        if (sibling && sibling.rect().contains_rect(cursor)) {
                             if (swap) {
                                 fork.right.inner.entity = fork.left.inner.entity;
                                 fork.left.inner.entity = win;
@@ -345,7 +347,7 @@ export class AutoTiler {
         const [cursor, monitor] = ext.cursor_status();
         const workspace = ext.active_workspace();
 
-        if (win.rect().contains(cursor)) {
+        if (win.rect().contains_rect(cursor)) {
             via_overview = false;
         }
 
@@ -400,13 +402,13 @@ export class AutoTiler {
         }
     }
 
-    place_or_stack(ext: Ext, win: ShellWindow, attach_to: ShellWindow, cursor: Rectangle): boolean {
+    place_or_stack(ext: Ext, win: ShellWindow, attach_to: ShellWindow, cursor: Mtk.Rectangle): boolean {
         const fork = this.get_parent_fork(attach_to.entity);
         if (!fork) return true;
 
         const is_sibling = this.windows_are_siblings(win.entity, attach_to.entity);
 
-        const attach_area: Rectangular =
+        const attach_area: Mtk.Rectangle =
             (win.stack === null && attach_to.stack === null && is_sibling) || (win.stack === null && is_sibling)
                 ? fork.area
                 : attach_to.meta.get_frame_rect();
@@ -436,8 +438,8 @@ export class AutoTiler {
                         ? Left
                         : Right
                     : placement.swap
-                    ? Up
-                    : Down;
+                        ? Up
+                        : Down;
 
             if (stack) {
                 if (matching_stack) {
@@ -489,7 +491,7 @@ export class AutoTiler {
         });
     }
 
-    tile(ext: Ext, fork: Fork, area: Rectangle) {
+    tile(ext: Ext, fork: Fork, area: Mtk.Rectangle) {
         this.forest.tile(ext, fork, area);
     }
 
@@ -739,7 +741,7 @@ export class AutoTiler {
  *
  * A null indicates that the window should be stacked
  */
-export function cursor_placement(ext: Ext, area: Rectangular, cursor: Rectangular): null | MoveByCursor {
+export function cursor_placement(ext: Ext, area: Mtk.Rectangle, cursor: Mtk.Rectangle): null | MoveByCursor {
     const { LEFT, RIGHT, TOP, BOTTOM } = geom.Side;
     const { HORIZONTAL, VERTICAL } = lib.Orientation;
 
@@ -749,12 +751,12 @@ export function cursor_placement(ext: Ext, area: Rectangular, cursor: Rectangula
         side === LEFT
             ? [HORIZONTAL, true]
             : side === RIGHT
-            ? [HORIZONTAL, false]
-            : side === TOP
-            ? [VERTICAL, true]
-            : side === BOTTOM
-            ? [VERTICAL, false]
-            : null;
+                ? [HORIZONTAL, false]
+                : side === TOP
+                    ? [VERTICAL, true]
+                    : side === BOTTOM
+                        ? [VERTICAL, false]
+                        : null;
 
     return res ? { orientation: res[0], swap: res[1] } : null;
 }

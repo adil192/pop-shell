@@ -34,8 +34,7 @@ clean:
 configure:
 	sh scripts/configure.sh
 
-compile: $(sources) clean
-	npm i
+compile: node_modules/.package-lock.json $(sources) clean
 	env PROJECTS="$(PROJECTS)" ./scripts/transpile.sh
 
 # Rebuild, install, reconfigure local settings, restart shell, and listen to journalctl logs
@@ -44,10 +43,12 @@ debug: depcheck compile install configure enable restart-shell listen
 depcheck:
 	@echo depcheck
 	@if ! command -v npm >/dev/null || ! command -v npx >/dev/null; then \
-		echo \
+		echo; \
 		echo 'You must install Node.js: ("sudo apt install npm" on Debian systems)'; \
 		exit 1; \
 	fi
+node_modules/.package-lock.json: package.json package-lock.json
+	npm ci
 
 enable:
 	gnome-extensions enable "pop-shell@system76.com"
@@ -69,17 +70,7 @@ uninstall:
 	rm -rf $(INSTALLBASE)/$(INSTALLNAME)
 
 restart-shell:
-	@echo "Restart shell!"
-ifneq ($(WAYLAND_DISPLAY),) # Don't restart if WAYLAND_DISPLAY is set
-	@echo "WAYLAND_DISPLAY is set, not restarting shell";
-else
-	if bash -c 'xprop -root &> /dev/null'; then \
-		pkill -HUP gnome-shell; \
-	else \
-		gnome-session-quit --logout; \
-	fi
-	sleep 3
-endif
+	@echo "Please logout and login again!"
 
 update-repository:
 	git fetch origin

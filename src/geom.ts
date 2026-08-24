@@ -1,3 +1,6 @@
+import Meta from 'gi://Meta';
+import Mtk from 'gi://Mtk';
+
 import type { Ext } from './extension.js';
 
 export enum Side {
@@ -8,39 +11,39 @@ export enum Side {
     CENTER,
 }
 
-export function xend(rect: Rectangular): number {
+export function xend(rect: Mtk.Rectangle): number {
     return rect.x + rect.width;
 }
 
-export function xcenter(rect: Rectangular): number {
+export function xcenter(rect: Mtk.Rectangle): number {
     return rect.x + rect.width / 2;
 }
 
-export function yend(rect: Rectangular): number {
+export function yend(rect: Mtk.Rectangle): number {
     return rect.y + rect.height;
 }
 
-export function ycenter(rect: Rectangular): number {
+export function ycenter(rect: Mtk.Rectangle): number {
     return rect.y + rect.height / 2;
 }
 
-export function center(rect: Rectangular): [number, number] {
+export function center(rect: Mtk.Rectangle): [number, number] {
     return [xcenter(rect), ycenter(rect)];
 }
 
-export function north(rect: Rectangular): [number, number] {
+export function north(rect: Mtk.Rectangle): [number, number] {
     return [xcenter(rect), rect.y];
 }
 
-export function east(rect: Rectangular): [number, number] {
+export function east(rect: Mtk.Rectangle): [number, number] {
     return [xend(rect), ycenter(rect)];
 }
 
-export function south(rect: Rectangular): [number, number] {
+export function south(rect: Mtk.Rectangle): [number, number] {
     return [xcenter(rect), yend(rect)];
 }
 
-export function west(rect: Rectangular): [number, number] {
+export function west(rect: Mtk.Rectangle): [number, number] {
     return [rect.x, ycenter(rect)];
 }
 
@@ -49,10 +52,10 @@ export function distance([ax, ay]: [number, number], [bx, by]: [number, number])
 }
 
 export function directional_distance(
-    a: Rectangular,
-    b: Rectangular,
-    fn_a: (rect: Rectangular) => [number, number],
-    fn_b: (rect: Rectangular) => [number, number],
+    a: Mtk.Rectangle,
+    b: Mtk.Rectangle,
+    fn_a: (rect: Mtk.Rectangle) => [number, number],
+    fn_b: (rect: Mtk.Rectangle) => [number, number],
 ) {
     return distance(fn_a(a), fn_b(b));
 }
@@ -77,7 +80,7 @@ export function leftward_distance(win_a: Meta.Window, win_b: Meta.Window) {
     return directional_distance(win_a.get_frame_rect(), win_b.get_frame_rect(), east, west);
 }
 
-export function nearest_side(ext: Ext, origin: [number, number], rect: Rectangular): [number, Side] {
+export function nearest_side(ext: Ext, origin: [number, number], rect: Mtk.Rectangle): [number, Side] {
     const left = west(rect),
         top = north(rect),
         right = east(rect),
@@ -100,7 +103,7 @@ export function nearest_side(ext: Ext, origin: [number, number], rect: Rectangul
     return nearest;
 }
 
-export function shortest_side(origin: [number, number], rect: Rectangular): number {
+export function shortest_side(origin: [number, number], rect: Mtk.Rectangle): number {
     let shortest = distance(origin, west(rect));
     shortest = Math.min(shortest, distance(origin, north(rect)));
     shortest = Math.min(shortest, distance(origin, east(rect)));

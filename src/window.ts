@@ -1,13 +1,9 @@
 import * as lib from './lib.js';
 import * as log from './log.js';
-import * as once_cell from './once_cell.js';
-import * as Rect from './rectangle.js';
 import * as Tags from './tags.js';
 import * as utils from './utils.js';
-import * as xprop from './xprop.js';
 import type { Entity } from './ecs.js';
 import type { Ext } from './extension.js';
-import type { Rectangle } from './rectangle.js';
 import * as scheduler from './scheduler.js';
 import * as focus from './focus.js';
 
@@ -16,9 +12,9 @@ import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
 import St from 'gi://St';
 import GLib from 'gi://GLib';
+import Clutter from 'gi://Clutter';
+import Mtk from 'gi://Mtk';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-
-const { OnceCell } = once_cell;
 
 export var window_tracker = Shell.WindowTracker.get_default();
 
@@ -46,12 +42,6 @@ enum RESTACK_SPEED {
     NORMAL = 200,
 }
 
-interface X11Info {
-    normal_hints: once_cell.OnceCell<lib.SizeHint | null>;
-    wm_role_: once_cell.OnceCell<string | null>;
-    xid_: once_cell.OnceCell<string | null>;
-}
-
 export class ShellWindow {
     entity: Entity;
     meta: Meta.Window;
@@ -74,17 +64,9 @@ export class ShellWindow {
         style_class: 'pop-shell-active-hint pop-shell-border-normal',
     });
 
-    prev_rect: null | Rectangular = null;
+    prev_rect: null | Mtk.Rectangle = null;
 
     window_app: any;
-
-    private was_hidden: boolean = false;
-
-    private extra: X11Info = {
-        normal_hints: new OnceCell(),
-        wm_role_: new OnceCell(),
-        xid_: new OnceCell(),
-    };
 
     private border_size = 0;
 
@@ -102,16 +84,6 @@ export class ShellWindow {
             ext.add_tag(entity, Tags.Floating);
         }
 
-        if (this.may_decorate()) {
-            if (!this.is_client_decorated()) {
-                if (ext.settings.show_title()) {
-                    this.decoration_show(ext);
-                } else {
-                    this.decoration_hide(ext);
-                }
-            }
-        }
-
         this.bind_window_events();
         this.bind_hint_events();
 
@@ -121,7 +93,7 @@ export class ShellWindow {
         this.restack();
         this.update_border_layout();
 
-        if (this.meta.get_compositor_private()?.get_stage()) this.on_style_changed();
+        if (this.meta.get_compositor_private<Clutter.Actor>()?.get_stage()) this.on_style_changed();
     }
 
     activate(move_mouse: boolean = true): void {
@@ -129,7 +101,7 @@ export class ShellWindow {
     }
 
     actor_exists(): boolean {
-        return !this.destroying && this.meta.get_compositor_private() !== null;
+        return !this.destroying && this.meta.get_compositor_private<Clutter.Actor>() !== null;
     }
 
     private bind_window_events() {
@@ -224,34 +196,12 @@ export class ShellWindow {
         return out;
     }
 
-    private decoration(_ext: Ext, callback: (xid: string) => void): void {
-        if (this.may_decorate()) {
-            const xid = this.xid();
-            if (xid) callback(xid);
-        }
-    }
-
-    decoration_hide(ext: Ext): void {
-        if (this.ignore_decoration()) return;
-
-        this.was_hidden = true;
-
-        this.decoration(ext, (xid) => xprop.set_hint(xid, xprop.MOTIF_HINTS, xprop.HIDE_FLAGS));
-    }
-
-    decoration_show(ext: Ext): void {
-        if (!this.was_hidden) return;
-
-        this.decoration(ext, (xid) => xprop.set_hint(xid, xprop.MOTIF_HINTS, xprop.SHOW_FLAGS));
-    }
-
     icon(_ext: Ext, size: number): any {
         let icon = this.window_app.create_icon_texture(size);
 
         if (!icon) {
             icon = new St.Icon({
                 icon_name: 'applications-other',
-                icon_type: St.IconType.FULLCOLOR,
                 icon_size: size,
             });
         }
@@ -263,16 +213,6 @@ export class ShellWindow {
         const name = this.meta.get_wm_class();
         if (name === null) return true;
         return WM_TITLE_BLACKLIST.findIndex((n) => name.startsWith(n)) !== -1;
-    }
-
-    is_client_decorated(): boolean {
-        // look I guess I'll hack something together in here if at all possible
-        // Because Meta.Window.is_client_decorated() was removed in Meta 15, using it breaks the extension in gnome 47 or higher
-        //return this.meta.window_type == Meta.WindowType.META_WINDOW_OVERRIDE_OTHER;
-        const xid = this.xid();
-        const extents = xid ? xprop.get_frame_extents(xid) : false;
-        if (!extents) return false;
-        return true;
     }
 
     is_maximized(): boolean {
@@ -349,12 +289,7 @@ export class ShellWindow {
         return this.meta.get_transient_for() !== null;
     }
 
-    may_decorate(): boolean {
-        const xid = this.xid();
-        return xid ? xprop.may_decorate(xid) : false;
-    }
-
-    move(ext: Ext, rect: Rectangular, on_complete?: () => void) {
+    move(ext: Ext, rect: Mtk.Rectangle | St.Viewport, on_complete?: () => void) {
         if (!this.same_workspace() && this.is_maximized()) {
             return;
         }
@@ -367,17 +302,16 @@ export class ShellWindow {
             rect.width = max_width;
         }
 
-        const clone = Rect.Rectangle.from_meta(rect);
         const meta = this.meta;
-        const actor = meta.get_compositor_private();
+        const actor = meta.get_compositor_private<Clutter.Actor>();
 
         if (actor) {
             if (this.is_maximized()) {
-                meta.unmaximize(Meta.MaximizeFlags.BOTH);
+                meta.unmaximize();
             }
             actor.remove_all_transitions();
 
-            ext.movements.insert(this.entity, clone);
+            ext.movements.insert(this.entity, rect instanceof Mtk.Rectangle ? rect : new Mtk.Rectangle(rect));
 
             ext.register({ tag: 2, window: this, kind: { tag: 1 } });
             if (on_complete) ext.register_fn(on_complete);
@@ -397,20 +331,13 @@ export class ShellWindow {
         this.border_size = this.border.get_theme_node().get_border_width(St.Side.TOP);
     }
 
-    rect(): Rectangle {
-        return Rect.Rectangle.from_meta(this.meta.get_frame_rect());
-    }
-
-    size_hint(): lib.SizeHint | null {
-        return this.extra.normal_hints.get_or_init(() => {
-            const xid = this.xid();
-            return xid ? xprop.get_size_hints(xid) : null;
-        });
+    rect(): Mtk.Rectangle {
+        return this.meta.get_frame_rect();
     }
 
     swap(ext: Ext, other: ShellWindow): void {
-        let ar = this.rect().clone();
-        let br = other.rect().clone();
+        let ar = this.rect().copy();
+        let br = other.rect().copy();
 
         other.move(ext, ar);
         this.move(ext, br, () => place_pointer_on(this.ext, this.meta));
@@ -421,13 +348,6 @@ export class ShellWindow {
         return title ? title : this.name(this.ext);
     }
 
-    wm_role(): string | null {
-        return this.extra.wm_role_.get_or_init(() => {
-            const xid = this.xid();
-            return xid ? xprop.get_window_role(xid) : null;
-        });
-    }
-
     workspace_id(): number {
         const workspace = this.meta.get_workspace();
         if (workspace) {
@@ -436,13 +356,6 @@ export class ShellWindow {
             this.meta.change_workspace_by_index(0, false);
             return 0;
         }
-    }
-
-    xid(): string | null {
-        return this.extra.xid_.get_or_init(() => {
-            if (utils.is_wayland()) return null;
-            return xprop.get_xid(this.meta);
-        });
     }
 
     show_border() {
@@ -538,7 +451,7 @@ export class ShellWindow {
             }
 
             const border = this.border;
-            const actor = this.meta.get_compositor_private();
+            const actor = this.meta.get_compositor_private<Clutter.Actor>();
             const win_group = global.window_group;
 
             if (actor && border && win_group) {
@@ -565,9 +478,9 @@ export class ShellWindow {
                 // Honor transient windows
                 for (const window of this.ext.windows.values()) {
                     const parent = window.meta.get_transient_for();
-                    const window_actor = window.meta.get_compositor_private();
+                    const window_actor = window.meta.get_compositor_private<Clutter.Actor>();
                     if (!parent || !window_actor) continue;
-                    const parent_actor = parent.get_compositor_private();
+                    const parent_actor = parent.get_compositor_private<Clutter.Actor>();
                     if (!parent_actor && parent_actor !== actor) continue;
                     win_group.set_child_below_sibling(border, window_actor);
                 }
@@ -584,7 +497,9 @@ export class ShellWindow {
         let above_windows: Clutter.Actor[] = new Array();
 
         for (const actor of global.get_window_actors()) {
-            if (actor && actor.get_meta_window() && actor.get_meta_window().is_above()) above_windows.push(actor);
+            if (!actor) continue;
+            const window = actor.get_meta_window();
+            if (window && window.is_above()) above_windows.push(actor);
         }
 
         return above_windows;
@@ -690,7 +605,7 @@ export class ShellWindow {
 export function activate(ext: Ext, move_mouse: boolean, win: Meta.Window) {
     try {
         // Return if window was destroyed.
-        if (!win.get_compositor_private()) return;
+        if (!win.get_compositor_private<Clutter.Actor>()) return;
 
         // Return if window is being destroyed.
         if (ext.get_window(win)?.destroying) return;
@@ -727,7 +642,7 @@ function pointer_in_work_area(): boolean {
     const indice = global.display.get_current_monitor();
     const mon = global.display.get_workspace_manager().get_active_workspace().get_work_area_for_monitor(indice);
 
-    return mon ? cursor.intersects(mon) : false;
+    return mon ? cursor.overlap(mon) : false;
 }
 
 function place_pointer_on(ext: Ext, win: Meta.Window) {
@@ -770,5 +685,5 @@ function place_pointer_on(ext: Ext, win: Meta.Window) {
 function pointer_already_on_window(meta: Meta.Window): boolean {
     const cursor = lib.cursor_rect();
 
-    return cursor.intersects(meta.get_frame_rect());
+    return cursor.overlap(meta.get_frame_rect());
 }

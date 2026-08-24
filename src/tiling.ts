@@ -3,21 +3,22 @@ import * as GrabOp from './grab_op.js';
 import * as Lib from './lib.js';
 import * as Log from './log.js';
 import * as Node from './node.js';
-import * as Rect from './rectangle.js';
 import * as Tags from './tags.js';
 import * as window from './window.js';
 import * as geom from './geom.js';
 import * as exec from './executor.js';
 
 import type { Entity } from './ecs.js';
-import type { Rectangle } from './rectangle.js';
 import type { Ext } from './extension.js';
 import type { NodeStack } from './node.js';
 import { AutoTiler } from './auto_tiler.js';
 import { Fork } from './fork.js';
 
 import Meta from 'gi://Meta';
+import Mtk from 'gi://Mtk';
+import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import { applyRect, clampRect, diffRect } from './rectangle.js';
 const { ShellWindow } = window;
 
 export enum Direction {
@@ -74,7 +75,7 @@ export class Tiler {
         if (win) this.overlay_watch(ext, win);
     }
 
-    rect(ext: Ext, monitor: Rectangle): Rectangle | null {
+    rect(ext: Ext, monitor: Mtk.Rectangle): Mtk.Rectangle | null {
         if (!ext.overlay.visible) return null;
 
         const columns = Math.floor(monitor.width / ext.column_size);
@@ -83,13 +84,13 @@ export class Tiler {
         return monitor_rect(monitor, columns, rows);
     }
 
-    change(overlay: Rectangular, rect: Rectangle, dx: number, dy: number, dw: number, dh: number): Tiler {
-        let changed = new Rect.Rectangle([
-            overlay.x + dx * rect.width,
-            overlay.y + dy * rect.height,
-            overlay.width + dw * rect.width,
-            overlay.height + dh * rect.height,
-        ]);
+    change(overlay: St.Viewport | Mtk.Rectangle, rect: Mtk.Rectangle, dx: number, dy: number, dw: number, dh: number): Tiler {
+        let changed = new Mtk.Rectangle({
+            x: overlay.x + dx * rect.width,
+            y: overlay.y + dy * rect.height,
+            width: overlay.width + dw * rect.width,
+            height: overlay.height + dh * rect.height,
+        });
 
         // Align to grid
         changed.x = Lib.round_increment(changed.x - rect.x, rect.width) + rect.x;
@@ -107,7 +108,7 @@ export class Tiler {
             changed.height = rect.height;
         }
 
-        // Check that corrected rectangle fits on monitors
+        // Check that corrected Mtk.Rectangle fits on monitors
         let monitors = tile_monitors(changed);
 
         // Do not use change if there are no matching displays
@@ -236,7 +237,8 @@ export class Tiler {
         } else {
             this.swap_window = null;
             this.rect_by_active_area(ext, (_monitor, rect) => {
-                this.change(ext.overlay, rect, x, y, w, h).change(ext.overlay, rect, 0, 0, 0, 0);
+                this.change(ext.overlay, rect, x, y, w, h)
+                    .change(ext.overlay, rect, 0, 0, 0, 0);
             });
         }
     }
@@ -418,9 +420,9 @@ export class Tiler {
 
     move_auto_(
         ext: Ext,
-        mov1: Rectangle,
-        mov2: Rectangle,
-        callback: (m: Rectangle, a: Rectangle, mov: Rectangle) => boolean,
+        mov1: Mtk.Rectangle,
+        mov2: Mtk.Rectangle,
+        callback: (m: Mtk.Rectangle, a: Mtk.Rectangle, mov: Mtk.Rectangle) => boolean,
     ) {
         if (ext.auto_tiler && this.window) {
             const entity = ext.auto_tiler.attached.get(this.window);
@@ -440,16 +442,16 @@ export class Tiler {
 
                 if (!topfork) return;
 
-                const toparea = topfork.area as Rect.Rectangle;
+                const toparea = topfork.area;
 
                 const before = window.rect();
 
                 const grab_op = new GrabOp.GrabOp(this.window as Entity, before);
 
-                let crect = grab_op.rect.clone();
+                let crect = grab_op.rect.copy();
 
-                let resize = (mov: Rectangle, func: (m: Rectangle, a: Rectangle, mov: Rectangle) => boolean) => {
-                    if (func(toparea, crect, mov) || crect.eq(grab_op.rect)) return;
+                let resize = (mov: Mtk.Rectangle, func: (m: Mtk.Rectangle, a: Mtk.Rectangle, mov: Mtk.Rectangle) => boolean) => {
+                    if (func(toparea, crect, mov) || crect.equal(grab_op.rect)) return;
 
                     (ext.auto_tiler as AutoTiler).forest.resize(
                         ext,
@@ -459,7 +461,7 @@ export class Tiler {
                         grab_op.operation(crect),
                         crect,
                     );
-                    grab_op.rect = crect.clone();
+                    grab_op.rect = crect.copy();
                 };
 
                 resize(mov1, callback);
@@ -481,7 +483,7 @@ export class Tiler {
         });
     }
 
-    rect_by_active_area(ext: Ext, callback: (monitor: Rectangle, area: Rectangle) => void) {
+    rect_by_active_area(ext: Ext, callback: (monitor: Mtk.Rectangle, area: Mtk.Rectangle) => void) {
         if (this.window) {
             const monitor_id = ext.monitors.get(this.window);
             if (monitor_id) {
@@ -519,14 +521,19 @@ export class Tiler {
                 mov2 = [0, -hcolumn, 0, hcolumn];
         }
 
-        this.move_auto_(ext, new Rect.Rectangle(mov1), new Rect.Rectangle(mov2), (work_area, crect, mov) => {
-            crect.apply(mov);
-            let before = crect.clone();
-            crect.clamp(work_area);
-            const diff = before.diff(crect);
-            crect.apply(new Rect.Rectangle([0, 0, -diff.x, -diff.y]));
-            return false;
-        });
+        this.move_auto_(
+            ext,
+            new Mtk.Rectangle({ x: mov1[0], y: mov1[1], width: mov1[2], height: mov1[3] }),
+            new Mtk.Rectangle({ x: mov2[0], y: mov2[1], width: mov2[2], height: mov2[3] }),
+            (work_area, crect, mov) => {
+                applyRect(crect, mov);
+                let before = crect.copy();
+                clampRect(crect, work_area);
+                const diff = diffRect(before, crect);
+                applyRect(crect, new Mtk.Rectangle({ width: -diff.x, height: -diff.y }));
+                return false;
+            },
+        );
     }
 
     move_auto(
@@ -749,7 +756,7 @@ export class Tiler {
             this.window = win.entity;
 
             if (win.is_maximized()) {
-                win.meta.unmaximize(Meta.MaximizeFlags.BOTH);
+                win.meta.unmaximize();
             }
 
             // Set overlay to match window
@@ -839,7 +846,7 @@ export class Tiler {
 export function locate_monitor(
     win: window.ShellWindow,
     direction: Meta.DisplayDirection,
-): [number, Rectangular] | null {
+): [number, Mtk.Rectangle] | null {
     if (!win.actor_exists()) return null;
 
     const from = win.meta.get_monitor();
@@ -849,25 +856,25 @@ export function locate_monitor(
     const { UP, DOWN, LEFT } = Meta.DisplayDirection;
 
     let origin: [number, number];
-    let exclude: (rect: Rectangular) => boolean;
+    let exclude: (rect: Mtk.Rectangle) => boolean;
 
     if (direction === UP) {
         origin = [ref.x + ref.width / 2, ref.y];
-        exclude = (rect: Rectangular) => {
+        exclude = (rect: Mtk.Rectangle) => {
             return rect.y > ref.y;
         };
     } else if (direction === DOWN) {
         origin = [ref.x + ref.width / 2, ref.y + ref.height];
-        exclude = (rect: Rectangular) => rect.y < ref.y;
+        exclude = (rect: Mtk.Rectangle) => rect.y < ref.y;
     } else if (direction === LEFT) {
         origin = [ref.x, ref.y + ref.height / 2];
-        exclude = (rect: Rectangular) => rect.x > ref.x;
+        exclude = (rect: Mtk.Rectangle) => rect.x > ref.x;
     } else {
         origin = [ref.x + ref.width, ref.y + ref.height / 2];
-        exclude = (rect: Rectangular) => rect.x < ref.x;
+        exclude = (rect: Mtk.Rectangle) => rect.x < ref.x;
     }
 
-    let next: [number, number, Rectangular] | null = null;
+    let next: [number, number, Mtk.Rectangle] | null = null;
 
     for (let mon = 0; mon < n_monitors; mon += 1) {
         if (mon === from) continue;
@@ -886,7 +893,7 @@ export function locate_monitor(
     return next ? [next[0], next[2]] : null;
 }
 
-function monitor_rect(monitor: Rectangle, columns: number, rows: number): Rectangle {
+function monitor_rect(monitor: Mtk.Rectangle, columns: number, rows: number): Mtk.Rectangle {
     let tile_width = monitor.width / columns;
     let tile_height = monitor.height / rows;
 
@@ -900,7 +907,7 @@ function monitor_rect(monitor: Rectangle, columns: number, rows: number): Rectan
         tile_height /= 2;
     }
 
-    return new Rect.Rectangle([monitor.x, monitor.y, tile_width, tile_height]);
+    return new Mtk.Rectangle({ x: monitor.x, y: monitor.y, width: tile_width, height: tile_height });
 }
 
 function move_window_or_monitor(
@@ -923,7 +930,7 @@ function move_window_or_monitor(
             if (!next_monitor || focus.meta.get_monitor() == next_window.meta.get_monitor()) return next_window;
 
             // If the next window is not contained within the next display, return the display.
-            return Rect.Rectangle.from_meta(next_monitor[1]).contains(next_window.rect())
+            return next_monitor[1].contains_rect(next_window.rect())
                 ? next_window
                 : next_monitor[0];
         }
@@ -932,13 +939,13 @@ function move_window_or_monitor(
     };
 }
 
-function tile_monitors(rect: Rectangle): Array<Rectangle> {
-    let total_size = (a: Rectangle, b: Rectangle): number => a.width * a.height - b.width * b.height;
+function tile_monitors(rect: Mtk.Rectangle): Array<Mtk.Rectangle> {
+    let total_size = (a: Mtk.Rectangle, b: Mtk.Rectangle): number => a.width * a.height - b.width * b.height;
 
     let workspace = global.workspace_manager.get_active_workspace();
     return Main.layoutManager.monitors
-        .map((_monitor: Rectangle, i: number) => workspace.get_work_area_for_monitor(i))
-        .filter((monitor: Rectangle) => {
+        .map((_mon, i: number) => workspace.get_work_area_for_monitor(i))
+        .filter((monitor: Mtk.Rectangle) => {
             return (
                 rect.x + rect.width > monitor.x &&
                 rect.y + rect.height > monitor.y &&

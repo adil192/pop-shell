@@ -1,107 +1,31 @@
-export class Rectangle {
-    array: [number, number, number, number];
+import Mtk from 'gi://Mtk';
 
-    constructor(array: [number, number, number, number]) {
-        this.array = array;
-    }
+export function fmtRect(rect: Mtk.Rectangle): string {
+    return `Mtk.Rectangle(${[rect.x, rect.y, rect.width, rect.height]})`;
+}
 
-    static from_meta(meta: Rectangular): Rectangle {
-        return new Rectangle([meta.x, meta.y, meta.width, meta.height]);
-    }
+export function clampRect(rect: Mtk.Rectangle, other: Mtk.Rectangle) {
+    let [intersects, intersection] = rect.intersect(other);
+    if (!intersects) return;
+    rect.x = intersection.x;
+    rect.y = intersection.y;
+    rect.width = intersection.width;
+    rect.height = intersection.height;
+}
 
-    get x() {
-        return this.array[0];
-    }
+/** Adds each field together */
+export function applyRect(rect: Mtk.Rectangle, other: Mtk.Rectangle) {
+    rect.x += other.x;
+    rect.y += other.y;
+    rect.width += other.width;
+    rect.height += other.height;
+}
 
-    set x(x: number) {
-        this.array[0] = x;
-    }
-
-    get y() {
-        return this.array[1];
-    }
-
-    set y(y: number) {
-        this.array[1] = y;
-    }
-
-    get width(): number {
-        return this.array[2];
-    }
-
-    set width(width: number) {
-        this.array[2] = width;
-    }
-
-    get height() {
-        return this.array[3];
-    }
-
-    set height(height: number) {
-        this.array[3] = height;
-    }
-
-    apply(other: Rectangle): this {
-        this.x += other.x;
-        this.y += other.y;
-        this.width += other.width;
-        this.height += other.height;
-        return this;
-    }
-
-    clamp(other: Rectangular) {
-        this.x = Math.max(other.x, this.x);
-        this.y = Math.max(other.y, this.y);
-
-        let tend = this.x + this.width,
-            oend = other.x + other.width;
-        if (tend > oend) {
-            this.width = oend - this.x;
-        }
-
-        tend = this.y + this.height;
-        oend = other.y + other.height;
-        if (tend > oend) {
-            this.height = oend - this.y;
-        }
-    }
-
-    clone(): Rectangle {
-        return new Rectangle([this.array[0], this.array[1], this.array[2], this.array[3]]);
-    }
-
-    contains(other: Rectangular): boolean {
-        return (
-            this.x <= other.x &&
-            this.y <= other.y &&
-            this.x + this.width >= other.x + other.width &&
-            this.y + this.height >= other.y + other.height
-        );
-    }
-
-    diff(other: Rectangular): Rectangle {
-        return new Rectangle([
-            other.x - this.x,
-            other.y - this.y,
-            other.width - this.width,
-            other.height - this.height,
-        ]);
-    }
-
-    eq(other: Rectangular): boolean {
-        return this.x == other.x && this.y == other.y && this.width == other.width && this.height == other.height;
-    }
-
-    fmt(): string {
-        return `Rect(${[this.x, this.y, this.width, this.height]})`;
-    }
-
-    intersects(other: Rectangular): boolean {
-        return (
-            this.x < other.x + other.width &&
-            this.x + this.width > other.x &&
-            this.y < other.y + other.height &&
-            this.y + this.height > other.y
-        );
-    }
+export function diffRect(rect: Mtk.Rectangle, other: Mtk.Rectangle): Mtk.Rectangle {
+    return new Mtk.Rectangle({
+        x: other.x - rect.x,
+        y: other.y - rect.y,
+        width: other.width - rect.width,
+        height: other.height - rect.height,
+    });
 }

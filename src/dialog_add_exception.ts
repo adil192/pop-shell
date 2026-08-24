@@ -5,7 +5,7 @@ import Clutter from 'gi://Clutter';
 import * as ModalDialog from 'resource:///org/gnome/shell/ui/modalDialog.js';
 
 export class AddExceptionDialog {
-    dialog: Shell.ModalDialog = new ModalDialog.ModalDialog({
+    dialog: ModalDialog.ModalDialog = new ModalDialog.ModalDialog({
         styleClass: 'pop-shell-search modal-dialog',
         destroyOnClose: false,
         shellReactive: true,
@@ -58,7 +58,7 @@ export class AddExceptionDialog {
     }
 
     close() {
-        this.dialog.close(global.get_current_time());
+        this.dialog.close();
     }
 
     show() {
@@ -66,7 +66,7 @@ export class AddExceptionDialog {
     }
 
     open() {
-        this.dialog.open(global.get_current_time(), false);
+        this.dialog.open();
         this.show();
     }
 }

@@ -1,5 +1,4 @@
 import * as Lib from './lib.js';
-import * as rect from './rectangle.js';
 
 import type { JsonIPC } from './launcher_service.js';
 
@@ -10,9 +9,10 @@ import Pango from 'gi://Pango';
 import Shell from 'gi://Shell';
 import St from 'gi://St';
 import Gdk from 'gi://Gdk';
+import Mtk from 'gi://Mtk';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import { ModalDialog } from 'resource:///org/gnome/shell/ui/modalDialog.js';
-import * as Util from 'resource:///org/gnome/shell/misc/util.js';
+import * as Util from 'resource:///org/gnome/shell/misc/animationUtils.js';
 
 const { overview, wm } = Main;
 import { Overview } from 'resource:///org/gnome/shell/ui/overview.js';
@@ -20,7 +20,7 @@ import { Overview } from 'resource:///org/gnome/shell/ui/overview.js';
 let overview_toggle: any = null;
 
 export class Search {
-    dialog: Shell.ModalDialog = new ModalDialog({
+    dialog: ModalDialog = new ModalDialog({
         styleClass: 'pop-shell-search modal-dialog',
         destroyOnClose: false,
         shellReactive: true,
@@ -34,20 +34,20 @@ export class Search {
     private list: St.Widget;
     private text: Clutter.Text;
     private widgets: Array<St.Widget>;
-    private scroller: St.Widget;
+    private scroller: St.ScrollView;
     private children_to_abandon: any = null;
     private last_trigger: number = 0;
 
     /** Output of `Main.pushModal`; Input to `Main.popModal()` */
     private grab_handle: any = null;
 
-    activate_id: (index: number) => void = () => {};
-    cancel: () => void = () => {};
-    complete: () => void = () => {};
-    search: (search: string) => void = () => {};
-    select: (id: number) => void = () => {};
-    quit: (id: number) => void = () => {};
-    copy: (id: number) => void = () => {};
+    activate_id: (index: number) => void = () => { };
+    cancel: () => void = () => { };
+    complete: () => void = () => { };
+    search: (search: string) => void = () => { };
+    select: (id: number) => void = () => { };
+    quit: (id: number) => void = () => { };
+    copy: (id: number) => void = () => { };
 
     constructor() {
         this.active_id = 0;
@@ -62,7 +62,7 @@ export class Search {
 
         this.text = this.entry.get_clutter_text();
         (this.text as any).set_use_markup(true);
-        this.dialog.setInitialKeyFocus(this.text);
+        this.dialog.setInitialKeyFocus(this.entry);
 
         let text_changed: null | number = null;
 
@@ -224,12 +224,12 @@ export class Search {
         this.dialog.connect('event', (_actor: any, event: any) => {
             const { width, height } = this.dialog.dialogLayout._dialog;
             const { x, y } = this.dialog.dialogLayout;
-            const area = new rect.Rectangle([x, y, width, height]);
+            const area = new Mtk.Rectangle({ x, y, width, height });
 
             const close =
                 this.dialog.visible &&
                 event.type() == Clutter.EventType.BUTTON_PRESS &&
-                !area.contains(Lib.cursor_rect());
+                !area.contains_rect(Lib.cursor_rect());
 
             if (close) {
                 this.reset();
@@ -271,14 +271,14 @@ export class Search {
         this.reset();
         this.remove_injections();
 
-        this.dialog.close(global.get_current_time());
+        this.dialog.close();
 
         wm.allowKeybinding('overlay-key', Shell.ActionMode.NORMAL | Shell.ActionMode.OVERVIEW);
     }
 
-    _open(timestamp: number, on_primary: boolean) {
+    _open() {
         this.grab_handle = Main.pushModal(this.dialog.dialogLayout);
-        this.dialog.open(timestamp, on_primary);
+        this.dialog.open();
 
         wm.allowKeybinding('overlay-key', Shell.ActionMode.ALL);
 
@@ -314,7 +314,7 @@ export class Search {
     }
 
     show() {
-        this.dialog.show_all();
+        this.dialog.show();
         this.clear();
         this.entry.grab_key_focus();
     }
@@ -326,7 +326,7 @@ export class Search {
 
             try {
                 Util.ensureActorVisibleInScrollView(this.scroller, widget);
-            } catch (_error) {}
+            } catch (_error) { }
         }
     }
 

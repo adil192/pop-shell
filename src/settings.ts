@@ -5,20 +5,7 @@ import { get_current_path } from './paths.js';
 
 const DARK = ['dark', 'adapta', 'plata', 'dracula'];
 
-interface Settings extends GObject.Object {
-    get_boolean(key: string): boolean;
-    set_boolean(key: string, value: boolean): void;
-
-    get_uint(key: string): number;
-    set_uint(key: string, value: number): void;
-
-    get_string(key: string): string;
-    set_string(key: string, value: string): void;
-
-    bind(key: string, object: GObject.Object, property: string, flags: any): void;
-}
-
-function settings_new_id(schema_id: string): Settings | null {
+function settings_new_id(schema_id: string): Gio.Settings | null {
     try {
         return new Gio.Settings({ schema_id });
     } catch (why) {
@@ -30,15 +17,15 @@ function settings_new_id(schema_id: string): Settings | null {
     }
 }
 
-function settings_new_schema(schema: string): Settings {
+function settings_new_schema(schema: string): Gio.Settings {
     const GioSSS = Gio.SettingsSchemaSource;
     const schemaDir = Gio.File.new_for_path(get_current_path()).get_child('schemas');
 
     let schemaSource = schemaDir.query_exists(null)
-        ? GioSSS.new_from_directory(schemaDir.get_path(), GioSSS.get_default(), false)
+        ? GioSSS.new_from_directory(schemaDir.get_path()!, GioSSS.get_default(), false)
         : GioSSS.get_default();
 
-    const schemaObj = schemaSource.lookup(schema, true);
+    const schemaObj = schemaSource?.lookup(schema, true);
 
     if (!schemaObj) {
         throw new Error(
@@ -71,10 +58,10 @@ const MOUSE_CURSOR_FOCUS_LOCATION = 'mouse-cursor-focus-location';
 const MAX_WINDOW_WIDTH = 'max-window-width';
 
 export class ExtensionSettings {
-    ext: Settings = settings_new_schema('org.gnome.shell.extensions.pop-shell');
-    int: Settings | null = settings_new_id('org.gnome.desktop.interface');
-    mutter: Settings | null = settings_new_id('org.gnome.mutter');
-    shell: Settings | null = settings_new_id('org.gnome.shell.extensions.user-theme');
+    ext: Gio.Settings = settings_new_schema('org.gnome.shell.extensions.pop-shell');
+    int: Gio.Settings | null = settings_new_id('org.gnome.desktop.interface');
+    mutter: Gio.Settings | null = settings_new_id('org.gnome.mutter');
+    shell: Gio.Settings | null = settings_new_id('org.gnome.shell.extensions.user-theme');
 
     // Getters
 

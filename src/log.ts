@@ -1,3 +1,5 @@
+import type { Extensions } from '@girs/gnome-shell'
+
 // simplified log4j levels
 export enum LOG_LEVELS {
     OFF,
@@ -14,7 +16,7 @@ export function log_level() {
     // log.js is at the level of prefs.js where the popshell Ext instance
     // is not yet available or visible, so we have to use the built in
     // ExtensionUtils to get the current settings
-    let settings = globalThis.popShellExtension.getSettings();
+    let settings = (globalThis.popShellExtension as Extensions.extension.Extension | Extensions.prefs.ExtensionPreferences).getSettings();
     let log_level = settings.get_uint('log-level');
 
     return log_level;

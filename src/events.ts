@@ -1,3 +1,6 @@
+import Meta from 'gi://Meta';
+import Mtk from 'gi://Mtk';
+
 import * as Window from './window.js';
 
 import type { Ext } from './extension.js';
@@ -60,7 +63,7 @@ export function global(event: GlobalEvent): GlobalEventTag {
     return { tag: 4, event };
 }
 
-export function window_move(ext: Ext, window: Window.ShellWindow, rect: Rectangular): ManagedWindow {
+export function window_move(ext: Ext, window: Window.ShellWindow, rect: Mtk.Rectangle): ManagedWindow {
     ext.movements.insert(window.entity, rect);
     return { tag: 2, window, kind: { tag: 1 } };
 }

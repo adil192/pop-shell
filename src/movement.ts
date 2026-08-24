@@ -1,3 +1,5 @@
+import Mtk from 'gi://Mtk';
+
 export enum Movement {
     NONE = 0,
     MOVED = 0b1,
@@ -9,7 +11,7 @@ export enum Movement {
     DOWN = 0b1000000,
 }
 
-export function calculate(from: Rectangular, change: Rectangular): Movement {
+export function calculate(from: Mtk.Rectangle, change: Mtk.Rectangle): Movement {
     const xpos = from.x == change.x;
     const ypos = from.y == change.y;
 

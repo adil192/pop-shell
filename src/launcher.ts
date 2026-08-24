@@ -13,8 +13,10 @@ import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 import Gio from 'gi://Gio';
+import GioUnix from 'gi://GioUnix';
 import Shell from 'gi://Shell';
 import St from 'gi://St';
+import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 const app_sys = Shell.AppSystem.get_default();
 
@@ -23,7 +25,7 @@ const CLIPBOARD_TYPE = St.ClipboardType.CLIPBOARD;
 
 interface SearchOption {
     result: JsonIPC.SearchResult;
-    menu: St.Widget;
+    menu: PopupMenu.PopupMenu;
 }
 
 export class Launcher extends search.Search {
@@ -228,9 +230,9 @@ export class Launcher extends search.Search {
 
         if (!app) {
             log.error(`GNOME Shell cannot find desktop entry for ${desktop_entry_id}`);
-            log.error(`pop-launcher will use Gio.DesktopAppInfo instead`);
+            log.error(`pop-launcher will use GioUnix.DesktopAppInfo instead`);
 
-            const dapp = Gio.DesktopAppInfo.new_from_filename(entry.path);
+            const dapp = GioUnix.DesktopAppInfo.new_from_filename(entry.path);
 
             if (!dapp) {
                 log.error(`could not find desktop entry for ${entry.path}`);
@@ -297,7 +299,7 @@ export class Launcher extends search.Search {
                         const output: string = imports.byteArray.toString(bytes);
                         const cmd = output.split(' ').shift()?.split('/').pop();
                         if (cmd === exec) return window;
-                    } catch (_) {}
+                    } catch (_) { }
                 }
             }
         }
@@ -321,7 +323,7 @@ export class Launcher extends search.Search {
         const mon_area = ext.monitor_area(active_monitor);
         const mon_width = mon_area ? mon_area.width : mon_work_area.width;
 
-        super._open(global.get_current_time(), false);
+        super._open();
 
         if (!this.dialog.visible) {
             this.clear();

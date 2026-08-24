@@ -1,21 +1,23 @@
+import Clutter from 'gi://Clutter';
+import Meta from 'gi://Meta';
+import Mtk from 'gi://Mtk';
+
 import * as arena from './arena.js';
 import * as Ecs from './ecs.js';
 import * as Lib from './lib.js';
 import * as log from './log.js';
 import * as movement from './movement.js';
-import * as Rect from './rectangle.js';
 import * as Node from './node.js';
 import * as Fork from './fork.js';
 import * as geom from './geom.js';
 
 import type { Entity } from './ecs.js';
-import type { Rectangle } from './rectangle.js';
 import type { ShellWindow } from './window.js';
 import type { Ext } from './extension.js';
 import { Stack } from './stack.js';
+import { fmtRect } from './rectangle.js';
 
 const { Arena } = arena;
-import Meta from 'gi://Meta';
 const { Movement } = movement;
 
 const { DOWN, UP, LEFT, RIGHT } = Movement;
@@ -26,7 +28,7 @@ export interface MoveByCursor {
 }
 
 export interface MoveByKeyboard {
-    src: Rectangular;
+    src: Mtk.Rectangle;
 }
 
 export interface MoveByAuto {
@@ -38,7 +40,7 @@ export type MoveBy = MoveByCursor | MoveByKeyboard | MoveByAuto;
 /** A request to move a window into a new location. */
 interface Request {
     parent: Entity;
-    rect: Rectangle;
+    rect: Mtk.Rectangle;
 }
 
 /** A collection of forks separated into trees
@@ -74,21 +76,21 @@ export class Forest extends Ecs.World {
     stacks: arena.Arena<Stack> = new Arena();
 
     /** The callback to execute when a window has been attached to a fork. */
-    on_attach: (parent: Entity, child: Entity) => void = () => {};
+    on_attach: (parent: Entity, child: Entity) => void = () => { };
 
     /** Likewise for detachments */
-    on_detach: (child: Entity) => void = () => {};
+    on_detach: (child: Entity) => void = () => { };
 
     constructor() {
         super();
     }
 
-    measure(ext: Ext, fork: Fork.Fork, area: Rectangle) {
+    measure(ext: Ext, fork: Fork.Fork, area: Mtk.Rectangle) {
         fork.measure(this, ext, area, this.on_record());
     }
 
     /** Measures and arranges windows in the tree from the given fork to the specified area. */
-    tile(ext: Ext, fork: Fork.Fork, area: Rectangle, ignore_reset: boolean = true) {
+    tile(ext: Ext, fork: Fork.Fork, area: Mtk.Rectangle, ignore_reset: boolean = true) {
         this.measure(ext, fork, area);
         this.arrange(ext, fork.workspace, ignore_reset);
     }
@@ -213,7 +215,7 @@ export class Forest extends Ecs.World {
         stack_from_left: boolean,
     ): [Entity, Fork.Fork] | null {
         /** Place a window in a fork based on where the window was originally located */
-        function place_by_keyboard(fork: Fork.Fork, src: Rectangular, left: Rectangle, right: Rectangle) {
+        function place_by_keyboard(fork: Fork.Fork, src: Mtk.Rectangle, left: Mtk.Rectangle, right: Mtk.Rectangle) {
             const from: [number, number] = [src.x + src.width / 2, src.y + src.height / 2];
 
             const lside = geom.shortest_side(from, left);
@@ -223,7 +225,7 @@ export class Forest extends Ecs.World {
         }
 
         /** By default, new attachments are positioned on the left of a branch */
-        function place(place_by: MoveBy, fork: Fork.Fork, left: Rectangle, right: Rectangle) {
+        function place(place_by: MoveBy, fork: Fork.Fork, left: Mtk.Rectangle, right: Mtk.Rectangle) {
             if ('swap' in place_by) {
                 const { orientation, swap } = place_by;
                 fork.set_orientation(orientation);
@@ -237,21 +239,18 @@ export class Forest extends Ecs.World {
          *
          * In the case of a vertical fork, the left and right halves are the top and bottom
          */
-        function area_of_halves(fork: Fork.Fork): [Rectangle, Rectangle] {
+        function area_of_halves(fork: Fork.Fork): [Mtk.Rectangle, Mtk.Rectangle] {
             const { x, y, width, height } = fork.area;
 
-            const [left, right]: [[number, number, number, number], [number, number, number, number]] =
-                fork.is_horizontal()
-                    ? [
-                          [x, y, width / 2, height],
-                          [x + width / 2, y, width / 2, height],
-                      ]
-                    : [
-                          [x, y, width, height / 2],
-                          [x, y + height / 2, width, height / 2],
-                      ];
-
-            return [new Rect.Rectangle(left), new Rect.Rectangle(right)];
+            return fork.is_horizontal()
+                ? [
+                    new Mtk.Rectangle({ y, height, width: width / 2, x: x }),
+                    new Mtk.Rectangle({ y, height, width: width / 2, x: x + width / 2 }),
+                ]
+                : [
+                    new Mtk.Rectangle({ x, width, height: height / 2, y: y }),
+                    new Mtk.Rectangle({ x, width, height: height / 2, y: y + height / 2 }),
+                ];
         }
 
         /** Create a fork and place this new fork on the left branch */
@@ -348,7 +347,7 @@ export class Forest extends Ecs.World {
     create_fork(
         left: Node.Node,
         right: Node.Node | null,
-        area: Rectangle,
+        area: Mtk.Rectangle,
         workspace: WorkspaceID,
         monitor: MonitorID,
     ): [Entity, Fork.Fork] {
@@ -360,7 +359,7 @@ export class Forest extends Ecs.World {
     }
 
     /** Create a new top level fork */
-    create_toplevel(window: Entity, area: Rectangle, id: [MonitorID, WorkspaceID]): [Entity, Fork.Fork] {
+    create_toplevel(window: Entity, area: Mtk.Rectangle, id: [MonitorID, WorkspaceID]): [Entity, Fork.Fork] {
         const [entity, fork] = this.create_fork(Node.Node.window(window), null, area, id[1], id[0]);
 
         this.string_reps.with(entity, (sid) => {
@@ -509,7 +508,7 @@ export class Forest extends Ecs.World {
         fork_c: Fork.Fork,
         is_left: boolean,
         movement: movement.Movement,
-        crect: Rectangle,
+        crect: Mtk.Rectangle,
     ) {
         const resize_fork = () => this.resize_fork_(ext, fork_e, crect, movement, false);
 
@@ -603,7 +602,7 @@ export class Forest extends Ecs.World {
     }
 
     /** Resize a window from a given fork based on a supplied movement. */
-    resize(ext: Ext, fork_e: Entity, fork_c: Fork.Fork, win_e: Entity, movement: movement.Movement, crect: Rectangle) {
+    resize(ext: Ext, fork_e: Entity, fork_c: Fork.Fork, win_e: Entity, movement: movement.Movement, crect: Mtk.Rectangle) {
         const is_left = fork_c.left.is_window(win_e) || fork_c.left.is_in_stack(win_e);
 
         ((movement & Movement.SHRINK) != 0 ? this.shrink_sibling : this.grow_sibling).call(
@@ -618,12 +617,12 @@ export class Forest extends Ecs.World {
     }
 
     /** Higher order function which forwards record events to our record method. */
-    on_record(): (entity: Entity, parent: Entity, rect: Rectangle) => void {
+    on_record(): (entity: Entity, parent: Entity, rect: Mtk.Rectangle) => void {
         return (e, p, a) => this.record(e, p, a);
     }
 
     /** Records window movements which have been queued. */
-    private record(entity: Entity, parent: Entity, rect: Rectangle) {
+    private record(entity: Entity, parent: Entity, rect: Mtk.Rectangle) {
         this.requested.set(entity, {
             parent: parent,
             rect: rect,
@@ -753,7 +752,7 @@ export class Forest extends Ecs.World {
     }
 
     /** Resizes a fork in the direction that a movement requests */
-    private resize_fork_(ext: Ext, child_e: Entity, crect: Rectangle, mov: movement.Movement, shrunk: boolean) {
+    private resize_fork_(ext: Ext, child_e: Entity, crect: Mtk.Rectangle, mov: movement.Movement, shrunk: boolean) {
         let parent = this.parents.get(child_e),
             child: Fork.Fork = this.forks.get(child_e) as Fork.Fork;
 
@@ -772,7 +771,7 @@ export class Forest extends Ecs.World {
             child = this.forks.get(parent) as Fork.Fork;
             is_left = child.left.is_fork(child_e);
 
-            if (child.area.contains(crect)) {
+            if (child.area.contains_rect(crect)) {
                 if ((mov & UP) !== 0) {
                     if (shrunk) {
                         if (child.area.y + child.area.height > src_node.area.y + src_node.area.height) {
@@ -830,7 +829,7 @@ export class Forest extends Ecs.World {
         fork_c: Fork.Fork,
         is_left: boolean,
         movement: movement.Movement,
-        crect: Rectangle,
+        crect: Mtk.Rectangle,
     ) {
         const resize_fork = () => this.resize_fork_(ext, fork_e, crect, movement, true);
 
@@ -847,7 +846,7 @@ export class Forest extends Ecs.World {
                 } else if ((movement & LEFT) != 0) {
                     resize_fork();
                 } else {
-                    this.readjust_fork_ratio_by_right(ext, crect.width, fork_c, fork_c.area.array[2]);
+                    this.readjust_fork_ratio_by_right(ext, crect.width, fork_c, fork_c.area.width);
                 }
             } else {
                 if ((movement & (LEFT | RIGHT)) != 0) {
@@ -861,7 +860,7 @@ export class Forest extends Ecs.World {
                 } else if ((movement & UP) != 0) {
                     resize_fork();
                 } else {
-                    this.readjust_fork_ratio_by_right(ext, crect.height, fork_c, fork_c.area.array[3]);
+                    this.readjust_fork_ratio_by_right(ext, crect.height, fork_c, fork_c.area.height);
                 }
             }
         }
@@ -892,15 +891,14 @@ export class Forest extends Ecs.World {
                 return fork ? this.display_fork(ext, branch.inner.entity, fork, scope + 1) : 'Missing Fork';
             case 2:
                 const window = ext.windows.get(branch.inner.entity);
-                return `Window(${branch.inner.entity}) (${
-                    window ? window.rect().fmt() : 'unknown area'
-                }; parent: ${ext.auto_tiler?.attached.get(branch.inner.entity)})`;
+                return `Window(${branch.inner.entity}) (${window ? fmtRect(window.rect()) : 'unknown area'
+                    }; parent: ${ext.auto_tiler?.attached.get(branch.inner.entity)})`;
             case 3:
                 let fmt = 'Stack(';
 
                 for (const entity of branch.inner.entities) {
                     const window = ext.windows.get(entity);
-                    fmt += `Window(${entity}) (${window ? window.rect().fmt() : 'unknown area'}), `;
+                    fmt += `Window(${entity}) (${window ? fmtRect(window.rect()) : 'unknown area'}), `;
                 }
 
                 return fmt + ')';
@@ -908,7 +906,7 @@ export class Forest extends Ecs.World {
     }
 
     display_fork(ext: Ext, entity: Entity, fork: Fork.Fork, scope: number): string {
-        let fmt = `Fork(${entity}) [${fork.area ? fork.area.array : 'unknown'}]: {\n`;
+        let fmt = `Fork(${entity}) [${fork.area ? fmtRect(fork.area) : 'unknown'}]: {\n`;
 
         fmt += ' '.repeat((1 + scope) * 2) + `workspace: (${fork.workspace}),\n`;
         fmt += ' '.repeat((1 + scope) * 2) + 'left: ' + this.display_branch(ext, fork.left, scope) + ',\n';
@@ -923,13 +921,13 @@ export class Forest extends Ecs.World {
     }
 }
 
-function move_window(ext: Ext, window: ShellWindow, rect: Rectangular, on_complete: () => void) {
+function move_window(ext: Ext, window: ShellWindow, rect: Mtk.Rectangle, on_complete: () => void) {
     if (!(window.meta instanceof Meta.Window)) {
         log.error(`attempting to a window entity in a tree which lacks a Meta.Window`);
         return;
     }
 
-    const actor = window.meta.get_compositor_private();
+    const actor = window.meta.get_compositor_private<Clutter.Actor>();
 
     if (!actor) {
         log.warn(`Window(${window.entity}) does not have an actor, and therefore cannot be moved`);

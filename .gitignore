@@ -14,4 +14,3 @@ debian/*
 .vscode
 node_modules
 tsconfig.tsbuildinfo
-package-lock.json

@@ -1,9 +1,8 @@
 import * as log from './log.js';
-import * as rectangle from './rectangle.js';
 
-import type { Rectangle } from './rectangle.js';
-
+import Clutter from 'gi://Clutter';
 import Meta from 'gi://Meta';
+import Mtk from 'gi://Mtk';
 import St from 'gi://St';
 
 export interface SizeHint {
@@ -43,16 +42,16 @@ export function bench<T>(name: string, callback: () => T): T {
     return value;
 }
 
-export function current_monitor(): Rectangle {
-    return rectangle.Rectangle.from_meta(
-        global.display.get_monitor_geometry(global.display.get_current_monitor()) as Rectangular,
-    );
+export function current_monitor(): Mtk.Rectangle {
+    return global.display.get_monitor_geometry(global.display.get_current_monitor());
 }
 
-// Fetch rectangle that represents the cursor
-export function cursor_rect(): Rectangle {
+// Fetch Mtk.Rectangle that represents the cursor
+export function cursor_rect(): Mtk.Rectangle {
     let [x, y] = global.get_pointer();
-    return new rectangle.Rectangle([x, y, 1, 1]);
+    return new Mtk.Rectangle({
+        x, y, width: 1, height: 1
+    });
 }
 
 export function dbg<T>(value: T): T {
