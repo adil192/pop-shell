@@ -2628,7 +2628,9 @@ let ext: Ext | null = null;
 let indicator: Indicator | null = null;
 
 declare global {
-    var popShellExtension: any;
+    var popShellExtension: {
+        getSettings(schema?: string): Gio.Settings;
+    } | undefined;
 }
 
 export default class PopShellExtension extends Extension {
