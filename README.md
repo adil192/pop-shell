@@ -8,6 +8,21 @@ Therefore, we see an opportunity here to advance the usability of the GNOME desk
 
 [![](./screenshot.webp)](https://raw.githubusercontent.com/pop-os/shell/master/screenshot.webp)
 
+## Fork notice
+
+This is a fork of the original [pop-os/shell](https://github.com/pop-os/shell) repo.
+
+I'm working on this just for fun: there isn't much interesting here from a user perspective.
+
+Summary of my changes:
+- Replaced manual `.d.ts` bindings with [gjsify/gnome-shell](https://github.com/gjsify/gnome-shell).
+- Updated to [Typescript 7](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/) for 10x faster builds and type checking.
+- Removed legacy code for X11 and old GNOME versions (3.x).
+- Added GNOME 51 support.
+- Added some basic CI to make sure code at least compiles.
+- Fixed some tiling jank with a fixed [`area_right` function](https://github.com/adil192/pop-shell/blob/63f0fa4df67182119b2c54b2377f1290e2ec2063/src/fork.ts#L77).
+  This can possibly be upstreamed but needs benchmarking to see if it's actually an improvement or just placebo.
+
 ---
 
 ## Table of Contents
@@ -67,7 +82,8 @@ Use the branch corresponding to your GNOME Shell version (`git checkout branch_n
 - **GNOME 3.36 through 41:** Use the `master_focal` branch.
 - **GNOME 42 through 44:** Use the `master_jammy` branch.
 - **GNOME 45:** Use the `master_mantic` branch.
-- **GNOME 46+:** Use the `master_noble` branch.
+- **GNOME 46 through 49:** Use the `master_noble` branch.
+- **GNOME 50+:** Use the `master_resolute` branch.
 
 GNU Make and TypeScript are also required to build the project.
 
@@ -79,7 +95,7 @@ If you want to uninstall the extension, you may invoke `make uninstall`, and the
 
 ### Packaging status
 
-- [Fedora](https://src.fedoraproject.org/rpms/gnome-shell-extension-pop-shell/): `sudo dnf install gnome-shell-extension-pop-shell xprop`
+- [Fedora](https://src.fedoraproject.org/rpms/gnome-shell-extension-pop-shell/): `sudo dnf install gnome-shell-extension-pop-shell`
 - [Gentoo](https://packages.gentoo.org/packages/gnome-extra/gnome-shell-extension-pop-shell): `emerge gnome-shell-extension-pop-shell`
 - [openSUSE Tumbleweed](https://build.opensuse.org/package/show/openSUSE:Factory/gnome-shell-extension-pop-shell): `sudo zypper install gnome-shell-extension-pop-shell`
 - [Arch Linux](https://aur.archlinux.org/packages/?O=0&K=gnome-shell-extension-pop-shell) (Using Yay as AUR helper):
@@ -181,19 +197,6 @@ Disabled by default, this mode manages windows using a tree-based tiling window 
   - Toggles the orientation of a fork's tiling orientation
 - `Super` + `G`
   - Toggles a window between floating and tiling.
-  - See [#customizing the window float list](#customizing-the-floating-window-list)
-
-### Customizing the Floating Window List
-There is file `$XDG_CONFIG_HOME/pop-shell/config.json` where you can add the following structure:
-```
-{
-  class: "<WM_CLASS String from xprop>",
-  title: "<Optional Window Title>"
-}
-```
-For example, doing `xprop` on GNOME Settings (or GNOME Control Center), the WM_CLASS values are `gnome-control-center` and `Gnome-control-center`. Use the second value (Gnome-control-center), which pop-shell will read. The `title` field is optional.
-
-After applying changes in `config.json`, you can reload the tiling if it doesn't work the first time.
 
 ## Developers
 
@@ -201,11 +204,12 @@ Due to the risky nature of plain JavaScript, this GNOME Shell extension is writt
 
 Please install the following as dependencies when developing:
 
-- [`Node.js`](https://nodejs.org/en/) LTS+ (v12+)
-- Latest `npm` (comes with NodeJS)
-- `npm install typescript@latest`
+- [`Node.js`](https://nodejs.org/en/) LTS+ (v22+)
+- `mutter-devkit` (optional, for testing)
 
-While working on the shell, you can recompile, reconfigure, reinstall, and restart GNOME Shell with logging with `make debug`. Note that this only works reliably in X11 sessions, since Wayland will exit to the login screen on restarting the shell.
+While working on the shell, you can test your changes by...:
+- Wayland: Running `dbus-run-session gnome-shell --devkit --wayland` to start a nested session. See the documentation at https://gjs.guide/extensions/development/debugging.html.
+- X11: Running `make debug` to restart GNOME Shell with extra logging.
 
 [Discussions welcome on Pop Chat](https://chat.pop-os.org/pop-os/channels/development)
 
