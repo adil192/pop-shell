@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -ex
 
@@ -9,7 +9,7 @@ shortcut_applied() {
         return 0
     fi
 
-    read -p "Pop shell will override your default shortcuts. Are you sure? (y/n) " CONT
+    read -rp "Pop shell will override your default shortcuts. Are you sure? (y/n) " CONT
     if test "$CONT" = "y"; then
         touch "./.confirm_shortcut_change"
         return 1
@@ -99,8 +99,8 @@ set_keybindings() {
 }
 
 if ! command -v gnome-extensions >/dev/null; then
-    echo 'You must install gnome-extensions to configure or enable via this script'
-    '(`gnome-shell` on Debian systems, `gnome-extensions` on openSUSE systems.)'
+    echo 'You must install gnome-extensions to configure or enable via this script' \
+        '(`gnome-shell` on Debian systems, `gnome-extensions` on openSUSE systems.)'
     exit 1
 fi
 
@@ -112,7 +112,7 @@ dconf write /org/gnome/shell/disable-user-extensions false
 # Use a window placement behavior which works better for tiling
 
 if gnome-extensions list | grep native-window; then
-    gnome-extensions enable $(gnome-extensions list | grep native-window)
+    gnome-extensions enable "$(gnome-extensions list | grep native-window)"
 fi
 
 # Workspaces spanning displays works better with Pop Shell

@@ -1,41 +1,26 @@
-#!/bin/sh
-set -ex
-
-pwd=$(pwd)
-
-# In goes standard JS. Out comes GJS-compatible JS
-transpile() {
-    cp "${src}" "${dest}"
-    # cat "${src}" | sed -e 's#export function#function#g' \
-    #     -e 's#export var#var#g' \
-    #     -e 's#export const#var#g' \
-    #     -e 's#Object.defineProperty(exports, "__esModule", { value: true });#var exports = {};#g' \
-    #     | sed -E 's/export class (\w+)/var \1 = class \1/g' \
-    #     | sed -E "s/import \* as (\w+) from '(\w+)'/const \1 = Me.imports.\2/g" > "${dest}"
-}
+#!/bin/bash
+set -e
 
 rm -rf _build
 
+echo Compiling into target/...
 glib-compile-schemas schemas &
-
-# Transpile to JavaScript
-
 for proj in ${PROJECTS}; do
     mkdir -p _build/"${proj}"
     npx tsc --p src/"${proj}"
 done
-
 npx tsc
-
 wait
+ls target
+echo
 
-# Convert JS to GJS-compatible scripts
-
-cp -r metadata.json icons schemas *.css _build &
-
-for src in $(find target -name '*.js'); do
-    dest=$(echo "$src" | sed s#target#_build#g)
-    transpile
+echo Packing into _build/...
+cp -r metadata.json icons schemas ./*.css _build &
+shopt -s globstar nullglob
+for src in target/**/*.js; do
+    dst="${src//target/_build}"
+    cp "${src}" "${dst}" &
 done
-
 wait
+ls _build
+echo
