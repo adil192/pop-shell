@@ -22,6 +22,7 @@ Summary of my changes:
 - Added some basic CI to make sure code at least compiles.
 - Fixed some tiling jank with a fixed [`area_right` function](https://github.com/adil192/pop-shell/blob/63f0fa4df67182119b2c54b2377f1290e2ec2063/src/fork.ts#L77).
   This can possibly be upstreamed but needs benchmarking to see if it's actually an improvement or just placebo.
+- Added some floating window exceptions for the Steam sign-in dialog and Firefox Picture-in-Picture windows. 
 
 ---
 
