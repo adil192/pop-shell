@@ -2,16 +2,10 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "tsc watch",
-            "type": "shell",
-            "command": "./node_modules/.bin/tsc",
-            "isBackground": true,
-            "args": [
-                "--watch",
-                "--noEmit",
-                "--project",
-                "."
-            ],
+            "label": "lint all",
+            "type": "npm",
+            "script": "lint",
+            "problemMatcher": "$eslint-stylish",
             "group": {
                 "kind": "test",
                 "isDefault": true
@@ -21,7 +15,6 @@
                 "echo": false,
                 "showReuseMessage": false
             },
-            "problemMatcher": "$tsc-watch",
             "runOptions": {
                 "runOn": "folderOpen"
             }

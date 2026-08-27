@@ -1,8 +1,8 @@
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
 
-const CONF_DIR: string = GLib.get_user_config_dir() + '/pop-shell';
-export var CONF_FILE: string = CONF_DIR + '/config.json';
+const CONF_DIR = GLib.get_user_config_dir() + '/pop-shell';
+export const CONF_FILE = CONF_DIR + '/config.json';
 
 export interface FloatRule {
     class?: string;
@@ -303,7 +303,7 @@ export class Config {
     }
 }
 
-function set_to_json(_key: string, value: any) {
+function set_to_json(_key: string, value: unknown) {
     if (typeof value === 'object' && value instanceof Set) {
         return [...value];
     }

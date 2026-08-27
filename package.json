@@ -3,6 +3,9 @@
     "type": "module",
     "private": true,
     "sideEffects": false,
+    "scripts": {
+        "lint": "eslint --cache --concurrency auto"
+    },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
         "@girs/giounix-2.0": "^4.1.0",
