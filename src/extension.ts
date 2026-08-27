@@ -68,7 +68,7 @@ import {
 // import { SwitcherList } from 'resource:///org/gnome/shell/ui/switcherPopup.js';
 import { Workspace } from 'resource:///org/gnome/shell/ui/workspace.js';
 import { WorkspaceThumbnail } from 'resource:///org/gnome/shell/ui/workspaceThumbnail.js';
-import * as Tags from './tags.js';
+import Tags from './tags.js';
 import { get_current_path } from './paths.js';
 import { clampRect, fmtRect } from './rectangle.js';
 
