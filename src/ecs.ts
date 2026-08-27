@@ -10,6 +10,7 @@
 /// - The second 32-bit integer is the generation.
 
 import { Executor } from './executor.js';
+import { Tags } from './tags.js';
 
 export type Entity = [number, number];
 
@@ -151,8 +152,8 @@ export class Storage<T> {
 /// - An array for storing tags associated with an entity
 export class World {
     private entities_: Array<Entity>;
-    private storages: Array<Storage<any>>;
-    private tags_: Array<any>;
+    private storages: Array<Storage<unknown>>;
+    private tags_: Array<Set<Tags>>;
     private free_slots: Array<number>;
 
     constructor() {
@@ -180,7 +181,7 @@ export class World {
     /// Fetches tags associated with an entity
     ///
     /// Tags are essentially a dense set of small components
-    tags(entity: Entity): any {
+    tags(entity: Entity): Set<Tags> {
         return this.tags_[entity[0]];
     }
 
@@ -197,11 +198,12 @@ export class World {
     create_entity(): Entity {
         const slot = this.free_slots.pop();
 
+        let entity: Entity;
         if (slot) {
-            var entity = this.entities_[slot];
+            entity = this.entities_[slot];
             entity[1] += 1;
         } else {
-            var entity = entity_new(this.capacity, 0);
+            entity = entity_new(this.capacity, 0);
             this.entities_.push(entity);
             this.tags_.push(new Set());
         }
@@ -222,17 +224,17 @@ export class World {
     }
 
     /// Adds a new tag to the given entity
-    add_tag(entity: Entity, tag: any) {
+    add_tag(entity: Entity, tag: Tags) {
         this.tags(entity).add(tag);
     }
 
     /// Returns `true` if this tag exists for the given entity
-    contains_tag(entity: Entity, tag: any): boolean {
+    contains_tag(entity: Entity, tag: Tags): boolean {
         return this.tags(entity).has(tag);
     }
 
     /// Deletes a tag from the given entity
-    delete_tag(entity: Entity, tag: any) {
+    delete_tag(entity: Entity, tag: Tags) {
         this.tags(entity).delete(tag);
     }
 
@@ -246,7 +248,7 @@ export class World {
     }
 
     /// Unregisters an old component storage from our world
-    unregister_storage(storage: Storage<any>) {
+    unregister_storage(storage: Storage<unknown>) {
         const matched = this.storages.indexOf(storage);
         if (matched) {
             swap_remove(this.storages, matched);
@@ -279,5 +281,5 @@ export class System<T> extends World {
     }
 
     /** Executs an event on the system */
-    run(_event: T): void {}
+    run(_event: T): void { }
 }

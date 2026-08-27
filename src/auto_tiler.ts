@@ -20,7 +20,7 @@ import type { ShellWindow } from './window.js';
 const { Stack } = stack;
 const { Ok, Err, ERR } = result;
 const { NodeKind } = node;
-import * as Tags from './tags.js';
+import Tags from './tags.js';
 
 export class AutoTiler {
     forest: Forest;

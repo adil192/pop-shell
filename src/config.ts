@@ -1,5 +1,6 @@
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
+import Meta from 'gi://Meta';
 
 const CONF_DIR = GLib.get_user_config_dir() + '/pop-shell';
 export const CONF_FILE = CONF_DIR + '/config.json';
@@ -139,14 +140,14 @@ export class Config {
         return false;
     }
 
-    skiptaskbar_shall_hide(meta_window: any) {
+    skiptaskbar_shall_hide(meta_window: Meta.Window) {
         const wmclass = meta_window.get_wm_class();
         const wmtitle = meta_window.get_title();
 
         if (!meta_window.is_skip_taskbar()) return false;
 
         for (const rule of this.skiptaskbarhidden.concat(SKIPTASKBAR_EXCEPTIONS)) {
-            if (rule.class) {
+            if (rule.class && wmclass) {
                 if (!new RegExp(rule.class, 'i').test(wmclass)) {
                     continue;
                 }
@@ -238,7 +239,7 @@ export class Config {
     static from_json(json: string): Config {
         try {
             return JSON.parse(json);
-        } catch (error) {
+        } catch (_) {
             return new Config();
         }
     }
@@ -250,7 +251,7 @@ export class Config {
         return { tag: 0, value };
     }
 
-    private static gio_file(): Result<any> {
+    private static gio_file(): Result<Gio.File> {
         try {
             const conf = Gio.File.new_for_path(CONF_FILE);
 
@@ -285,7 +286,7 @@ export class Config {
         }
     }
 
-    private static write(data: string): Result<null> {
+    private static write(data: string): Result<Gio.File> {
         try {
             const file = Config.gio_file();
             if (file.tag === 1) return file;
