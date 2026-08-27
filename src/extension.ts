@@ -115,9 +115,9 @@ export class Ext extends Ecs.System<ExtEvent> {
     /** Animate window movements */
     animate_windows: boolean = true;
 
-    button: St.Button | null = null;
-    button_auto_on_icon: string | null = null;
-    button_auto_off_icon: string | null = null;
+    button: typeof PanelSettings.Indicator.prototype.button | null = null;
+    button_auto_on_icon: Gio.Icon | null = null;
+    button_auto_off_icon: Gio.Icon | null = null;
 
     conf: Config.Config = new Config.Config();
 
@@ -2174,7 +2174,7 @@ export class Ext extends Ecs.System<ExtEvent> {
 
             if (indicator) indicator.toggle_tiled.setToggleState(false);
 
-            if (this.button) this.button.icon_name = this.button_auto_off_icon;
+            if (this.button?.icon) this.button.icon.gicon = this.button_auto_off_icon;
 
             if (this.settings.active_hint()) {
                 this.show_border_on_focused();
@@ -2200,7 +2200,7 @@ export class Ext extends Ecs.System<ExtEvent> {
         this.auto_tiler = tiler;
 
         this.settings.set_tile_by_default(true);
-        if (this.button) this.button.icon_name = this.button_auto_on_icon;
+        if (this.button?.icon) this.button.icon.gicon = this.button_auto_on_icon;
 
         for (const window of this.windows.values()) {
             if (window.is_tilable(this)) {

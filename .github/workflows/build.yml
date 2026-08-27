@@ -28,3 +28,6 @@ jobs:
           path: pop-shell@system76.com_*.zip
           if-no-files-found: error
           archive: false
+
+      - name: Run lints
+        run: npm run lint

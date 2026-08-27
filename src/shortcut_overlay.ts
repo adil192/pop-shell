@@ -39,7 +39,7 @@ export class Column {
     }
 }
 
-export var ShortcutOverlay = GObject.registerClass(
+export const ShortcutOverlay = GObject.registerClass(
     class ShortcutOverlay extends St.BoxLayout {
         title: string;
         columns: Array<Column>;

@@ -148,10 +148,10 @@ export class MainView implements View {
 }
 
 export class ExceptionsView implements View {
-    widget: any;
+    widget;
     callback: (event: Event) => void = () => { };
 
-    exceptions: any = Gtk.ListBox.new();
+    exceptions = Gtk.ListBox.new();
 
     constructor() {
         const desc_title = Gtk.Label.new('<b>System Exceptions</b>');
@@ -205,12 +205,11 @@ export class ExceptionsView implements View {
 }
 
 class App {
-    main_view: MainView = new MainView();
-    exceptions_view: ExceptionsView = new ExceptionsView();
+    main_view = new MainView();
+    exceptions_view = new ExceptionsView();
 
-    stack: any = Gtk.Stack.new();
-    window: any;
-    config: config.Config = new config.Config();
+    stack = Gtk.Stack.new();
+    config = new config.Config();
 
     constructor() {
         this.stack.set_border_width(16);
@@ -248,7 +247,7 @@ class App {
             this.exceptions_view.add_rule(wmclass, wmtitle, !disabled);
         }
 
-        for (const value of Array.from<any>(this.config.float)) {
+        for (const value of Array.from(this.config.float)) {
             const wmtitle = value.title ?? undefined;
             const wmclass = value.class ?? undefined;
             if (!value.disabled) this.main_view.add_rule(wmclass, wmtitle);
@@ -299,7 +298,7 @@ class App {
     }
 }
 
-function list_header_func(row: any, before: null | any) {
+function list_header_func(row: Gtk.ListBoxRow, before: Gtk.ListBoxRow | null) {
     if (before) {
         row.set_header(Gtk.Separator.new(Gtk.Orientation.HORIZONTAL));
     }

@@ -9,44 +9,33 @@ import {
     PopupSwitchMenuItem,
     PopupSeparatorMenuItem,
 } from 'resource:///org/gnome/shell/ui/popupMenu.js';
-import { Button } from 'resource:///org/gnome/shell/ui/panelMenu.js';
+import PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
+import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import { get_current_path } from './paths.js';
 // import * as Settings from './settings.js';
 
 export class Indicator {
-    button: any;
-    appearances: any;
+    button;
 
-    toggle_tiled: any;
-    toggle_titles: null | any;
-    toggle_active: any;
-    border_radius: any;
+    toggle_tiled;
+    toggle_titles;
+    toggle_active;
+    border_radius;
 
-    entry_gaps: any;
+    entry_gaps;
 
     constructor(ext: Ext) {
-        this.button = new Button(0.0, _('Pop Shell Settings'));
-
         const path = get_current_path();
-        ext.button = this.button;
-        ext.button_auto_on_icon = `${path}/icons/pop-shell-auto-on-symbolic.svg`;
-        ext.button_auto_off_icon = `${path}/icons/pop-shell-auto-off-symbolic.svg`;
+        ext.button_auto_on_icon = Gio.icon_new_for_string(`${path}/icons/pop-shell-auto-on-symbolic.svg`);
+        ext.button_auto_off_icon = Gio.icon_new_for_string(`${path}/icons/pop-shell-auto-off-symbolic.svg`);
 
-        const button_icon_auto_on = new St.Icon({
-            icon_name: ext.button_auto_on_icon,
+        ext.button = this.button = new PanelMenu.Button(0.0, _('Pop Shell Settings')) as
+            PanelMenu.Button & { icon: St.Icon | null, };
+        this.button.icon = new St.Icon({
+            gicon: ext.settings.tile_by_default() ? ext.button_auto_on_icon : ext.button_auto_off_icon,
             style_class: 'system-status-icon',
         });
-        const button_icon_auto_off = new St.Icon({
-            icon_name: ext.button_auto_off_icon,
-            style_class: 'system-status-icon',
-        });
-
-        if (ext.settings.tile_by_default()) {
-            this.button.icon = button_icon_auto_on;
-        } else {
-            this.button.icon = button_icon_auto_off;
-        }
 
         this.button.add_child(this.button.icon);
 
@@ -302,20 +291,18 @@ function parse_number(text: string): number {
     return number;
 }
 
-function show_title(ext: Ext): any {
-    const t = toggle(_('Show Window Titles'), ext.settings.show_title(), (toggle: any) => {
+function show_title(ext: Ext) {
+    return toggle(_('Show Window Titles'), ext.settings.show_title(), (toggle) => {
         ext.settings.set_show_title(toggle.state);
     });
-
-    return t;
 }
 
-function toggle(desc: string, active: boolean, connect: (toggle: any, state: boolean) => void): any {
+function toggle(desc: string, active: boolean, connect: (toggle: PopupSwitchMenuItem, state: boolean) => void) {
     const toggle = new PopupSwitchMenuItem(desc, active);
 
     toggle.label.set_y_align(Clutter.ActorAlign.CENTER);
 
-    toggle.connect('toggled', (_: any, state: boolean) => {
+    toggle.connect('toggled', (_, state: boolean) => {
         connect(toggle, state);
         return true;
     });
@@ -323,15 +310,14 @@ function toggle(desc: string, active: boolean, connect: (toggle: any, state: boo
     return toggle;
 }
 
-function tiled(ext: Ext): any {
-    const t = toggle(_('Tile Windows'), null != ext.auto_tiler, (_, shouldTile) => {
+function tiled(ext: Ext) {
+    return toggle(_('Tile Windows'), null != ext.auto_tiler, (_, shouldTile) => {
         if (shouldTile) {
             ext.auto_tile_on();
         } else {
             ext.auto_tile_off();
         }
     });
-    return t;
 }
 
 function color_selector(ext: Ext, menu: any) {

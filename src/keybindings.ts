@@ -5,8 +5,8 @@ import Shell from 'gi://Shell';
 import Meta from 'gi://Meta';
 
 export class Keybindings {
-    global: object;
-    window_focus: object;
+    global;
+    window_focus;
 
     private ext: Ext;
 
@@ -62,7 +62,7 @@ export class Keybindings {
         };
     }
 
-    enable(keybindings: any) {
+    enable(keybindings: Record<string, () => void>) {
         for (const name in keybindings) {
             wm.addKeybinding(
                 name,

@@ -29,7 +29,7 @@ export enum Direction {
 }
 
 export class Tiler {
-    private keybindings: object;
+    private keybindings;
 
     window: Entity | null = null;
 

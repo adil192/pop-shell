@@ -252,7 +252,7 @@ function number_entry(): Gtk.Entry {
     return new Gtk.Entry({ input_purpose: Gtk.InputPurpose.NUMBER });
 }
 
-function build_combo<Enum extends { [name: string]: string | number }>(grid: Gtk.Grid, top_index: number, iter_enum: Enum, label: string): Gtk.ComboBoxText {
+function build_combo<Enum extends Record<string, number | string>>(grid: Gtk.Grid, top_index: number, iter_enum: Enum, label: string): Gtk.ComboBoxText {
     const label_ = new Gtk.Label({
         label: label,
         halign: Gtk.Align.START,
