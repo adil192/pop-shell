@@ -5,7 +5,7 @@
     "private": true,
     "sideEffects": false,
     "scripts": {
-        "lint": "eslint --cache --concurrency auto"
+        "lint": "eslint --cache"
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
