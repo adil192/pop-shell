@@ -25,7 +25,7 @@ export function addContext(menu: PopupMenu.PopupMenu, name: string, activate: ()
     menu_item.connect('activate', () => activate());
 }
 
-function appendMenuItem(menu: any, label: string) {
+function appendMenuItem(menu: PopupMenu.PopupMenu, label: string) {
     const item = new PopupMenu.PopupMenuItem(label);
     menu.addMenuItem(item);
     return item;

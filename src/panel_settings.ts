@@ -8,6 +8,7 @@ import {
     PopupMenuItem,
     PopupSwitchMenuItem,
     PopupSeparatorMenuItem,
+    PopupMenu,
 } from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import Gio from 'gi://Gio';
@@ -39,7 +40,7 @@ export class Indicator {
 
         this.button.add_child(this.button.icon);
 
-        const bm = this.button.menu;
+        const bm = this.button.menu as PopupMenu;
 
         this.toggle_tiled = tiled(ext);
 
@@ -89,11 +90,11 @@ export class Indicator {
     }
 }
 
-function menu_separator(text: any): any {
+function menu_separator(text: string) {
     return new PopupSeparatorMenuItem(text);
 }
 
-function settings_button(menu: any): any {
+function settings_button(menu: PopupMenu) {
     const item = new PopupMenuItem(_('View All'));
     item.connect('activate', () => {
         const path = GLib.find_program_in_path('pop-shell-shortcuts');
@@ -115,7 +116,7 @@ function settings_button(menu: any): any {
     return item;
 }
 
-function floating_window_exceptions(ext: Ext, menu: any): any {
+function floating_window_exceptions(ext: Ext, menu: PopupMenu) {
     const label = new St.Label({ text: 'Floating Window Exceptions' });
     label.set_x_expand(true);
 
@@ -140,7 +141,7 @@ function floating_window_exceptions(ext: Ext, menu: any): any {
     return base;
 }
 
-function shortcuts(menu: any): any {
+function shortcuts(menu: PopupMenu) {
     const layout_manager = new Clutter.GridLayout({ orientation: Clutter.Orientation.HORIZONTAL });
     const widget = new St.Widget({ layout_manager, x_expand: true });
 
@@ -161,11 +162,11 @@ function shortcuts(menu: any): any {
         menu.close();
     });
 
-    function create_label(text: string): any {
+    function create_label(text: string) {
         return new St.Label({ text });
     }
 
-    function create_shortcut_label(text: string): any {
+    function create_shortcut_label(text: string) {
         const label = create_label(text);
         label.set_x_align(Clutter.ActorAlign.END);
         return label;
@@ -210,7 +211,7 @@ function number_entry(
     label: string,
     valueOrOptions: number | { value: number; min: number; max: number },
     callback: (a: number) => void,
-): any {
+) {
     let value = valueOrOptions,
         min: number,
         max: number;
@@ -231,7 +232,7 @@ function number_entry(
     const text = entry.clutter_text;
     text.set_max_length(2);
 
-    entry.connect('key-release-event', (_: any, event: any) => {
+    entry.connect('key-release-event', (_, event) => {
         const symbol = event.get_key_symbol();
 
         const number: number | null =
@@ -320,7 +321,7 @@ function tiled(ext: Ext) {
     });
 }
 
-function color_selector(ext: Ext, menu: any) {
+function color_selector(ext: Ext, menu: PopupMenu) {
     const color_selector_item = new PopupMenuItem('Active Hint Color');
     const color_button = new St.Button();
     const settings = ext.settings;
