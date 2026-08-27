@@ -17,9 +17,9 @@ export class LauncherService {
         this.service = service;
 
         /** Recursively registers an intent to read the next line asynchronously  */
-        const generator = (stdout: any, res: any) => {
+        const generator: Gio.AsyncReadyCallback<Gio.DataInputStream> = (stdout, res) => {
             try {
-                const [bytes] = stdout.read_line_finish(res);
+                const [bytes] = stdout!.read_line_finish(res);
                 if (bytes) {
                     const string = byteArray.toString(bytes);
                     // log.debug(`received response from launcher service: ${string}`)
@@ -28,7 +28,8 @@ export class LauncherService {
                 }
             } catch (why) {
                 // Do not print an error if it was merely cancelled.
-                if ((why as any).matches(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED)) {
+                if (why instanceof GLib.Error &&
+                    why.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED)) {
                     return;
                 }
 
@@ -63,7 +64,7 @@ export class LauncherService {
         GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
             if (service.stdout.has_pending() || service.stdin.has_pending()) return true;
 
-            const close_stream = (stream: any) => {
+            const close_stream = (stream: Gio.DataInputStream | Gio.DataOutputStream) => {
                 try {
                     stream.close(null);
                 } catch (why) {
@@ -92,7 +93,7 @@ export class LauncherService {
         this.send({ Select: id });
     }
 
-    send(object: Object) {
+    send(object: unknown) {
         const message = JSON.stringify(object);
         try {
             this.service.stdin.write_all(message + '\n', null);

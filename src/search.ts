@@ -17,7 +17,7 @@ import * as Util from 'resource:///org/gnome/shell/misc/animationUtils.js';
 const { overview, wm } = Main;
 import { Overview } from 'resource:///org/gnome/shell/ui/overview.js';
 
-let overview_toggle: any = null;
+let overview_toggle: typeof Overview.prototype['toggle'] | null = null;
 
 export class Search {
     dialog: ModalDialog = new ModalDialog({
@@ -35,11 +35,11 @@ export class Search {
     private text: Clutter.Text;
     private widgets: Array<St.Widget>;
     private scroller: St.ScrollView;
-    private children_to_abandon: any = null;
+    private children_to_abandon: Clutter.Actor[] | null = null;
     private last_trigger: number = 0;
 
     /** Output of `Main.pushModal`; Input to `Main.popModal()` */
-    private grab_handle: any = null;
+    private grab_handle: Clutter.Grab | null = null;
 
     activate_id: (index: number) => void = () => { };
     cancel: () => void = () => { };
@@ -61,17 +61,17 @@ export class Search {
         this.entry.set_hint_text("  Type to search apps, or type '?' for more options.");
 
         this.text = this.entry.get_clutter_text();
-        (this.text as any).set_use_markup(true);
+        this.text.set_use_markup(true);
         this.dialog.setInitialKeyFocus(this.entry);
 
         let text_changed: null | number = null;
 
         this.text.connect('activate', () => this.activate_id(this.active_id));
 
-        this.text.connect('text-changed', (entry: any) => {
+        this.text.connect('text-changed', (entry) => {
             if (text_changed !== null) GLib.source_remove(text_changed);
 
-            const text = (entry as Clutter.Text).get_text().trim();
+            const text = entry.get_text().trim();
 
             const update = () => {
                 this.clear();
@@ -90,7 +90,7 @@ export class Search {
             });
         });
 
-        this.text.connect('key-press-event', (_: any, event: any) => {
+        this.text.connect('key-press-event', (_, event) => {
             const key = Gdk.keyval_name(Gdk.keyval_to_upper(event.get_key_symbol()));
             const ctrlKey = Boolean(event.get_state() & Clutter.ModifierType.CONTROL_MASK);
 
@@ -191,7 +191,7 @@ export class Search {
                 this.quit(this.active_id);
                 return;
             } else if (key === 'Copy' || (ctrlKey && (key === 'C' || key === 'Insert'))) {
-                if ((this.text as any).get_selection()) {
+                if (this.text.get_selection()) {
                     // If text entry has selected text, behave as normal
                     return;
                 } else {
@@ -221,7 +221,7 @@ export class Search {
         // Ensure that the width is at least 640 pixels wide.
         this.dialog.contentLayout.width = Math.max(Lib.current_monitor().width / 4, 640);
 
-        this.dialog.connect('event', (_actor: any, event: any) => {
+        this.dialog.connect('event', (_, event) => {
             const { width, height } = this.dialog.dialogLayout._dialog;
             const { x, y } = this.dialog.dialogLayout;
             const area = new Mtk.Rectangle({ x, y, width, height });
@@ -253,7 +253,7 @@ export class Search {
     }
 
     clear() {
-        this.children_to_abandon = (this.list as any).get_children();
+        this.children_to_abandon = this.list.get_children();
         this.widgets = [];
         this.active_id = 0;
     }
@@ -264,7 +264,7 @@ export class Search {
                 Main.popModal(this.grab_handle);
                 this.grab_handle = null;
             }
-        } catch (error) {
+        } catch (_) {
             // global.logError(error);
         }
 
@@ -326,7 +326,7 @@ export class Search {
 
             try {
                 Util.ensureActorVisibleInScrollView(this.scroller, widget);
-            } catch (_error) { }
+            } catch (_) { /* empty */ }
         }
     }
 
@@ -350,13 +350,13 @@ export class Search {
         const { widget, shortcut } = option;
 
         if (id < 9) {
-            (shortcut as any).set_text(`Ctrl + ${id + 1}`);
-            (shortcut as any).show();
+            shortcut.set_text(`Ctrl + ${id + 1}`);
+            shortcut.show();
         } else {
-            (shortcut as any).hide();
+            shortcut.hide();
         }
 
-        let initial_cursor = Lib.cursor_rect();
+        const initial_cursor = Lib.cursor_rect();
 
         widget.connect('clicked', () => this.activate_id(id));
         widget.connect('notify::hover', () => {
@@ -373,7 +373,7 @@ export class Search {
 
         this.list.show();
 
-        (this.scroller as any).set_policy(St.PolicyType.NEVER, St.PolicyType.AUTOMATIC);
+        this.scroller.set_policy(St.PolicyType.NEVER, St.PolicyType.AUTOMATIC);
 
         if (id === 0) {
             GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
@@ -404,7 +404,7 @@ export class SearchOption {
 
     widget: St.Button;
 
-    shortcut: St.Widget = new St.Label({
+    shortcut = new St.Label({
         text: '',
         y_align: Clutter.ActorAlign.CENTER,
         style: 'padding-left: 6px;padding-right: 6px',
@@ -448,11 +448,11 @@ export class SearchOption {
         layout.add_child(this.shortcut);
 
         this.widget = new St.Button({ style_class: 'pop-shell-search-element' });
-        (this.widget as any).add_child(layout);
+        this.widget.add_child(layout);
     }
 }
 
-function attach_icon(layout: any, icon: null | JsonIPC.IconSource, icon_size: number) {
+function attach_icon(layout: St.BoxLayout, icon: null | JsonIPC.IconSource, icon_size: number) {
     if (icon) {
         const generated = generate_icon(icon, icon_size);
 
@@ -488,7 +488,7 @@ function generate_icon(icon: JsonIPC.IconSource, icon_size: number): null | St.W
     }
 
     if (app_icon) {
-        (app_icon as any).style_class = 'pop-shell-search-icon';
+        app_icon.style_class = 'pop-shell-search-icon';
     }
 
     return app_icon;

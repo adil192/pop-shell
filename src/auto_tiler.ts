@@ -20,7 +20,7 @@ import type { ShellWindow } from './window.js';
 const { Stack } = stack;
 const { Ok, Err, ERR } = result;
 const { NodeKind } = node;
-import * as Tags from './tags.js';
+import Tags from './tags.js';
 
 export class AutoTiler {
     forest: Forest;
@@ -97,7 +97,7 @@ export class AutoTiler {
     }
 
     update_toplevel(ext: Ext, fork: Fork, monitor: number, smart_gaps: boolean) {
-        let rect = ext.monitor_work_area(monitor);
+        const rect = ext.monitor_work_area(monitor);
 
         fork.smart_gapped = smart_gaps && fork.right === null;
 
@@ -122,7 +122,7 @@ export class AutoTiler {
 
     /** Attaches `win` to an optionally-given monitor */
     attach_to_monitor(ext: Ext, win: ShellWindow, workspace_id: [number, number], smart_gaps: boolean) {
-        let rect = ext.monitor_work_area(workspace_id[0]);
+        const rect = ext.monitor_work_area(workspace_id[0]);
 
         if (!smart_gaps) {
             rect.x += ext.gap_outer;
@@ -147,7 +147,7 @@ export class AutoTiler {
         move_by: MoveBy,
         stack_from_left: boolean = true,
     ): boolean {
-        let attached = this.forest.attach_window(ext, attachee.entity, attacher.entity, move_by, stack_from_left);
+        const attached = this.forest.attach_window(ext, attachee.entity, attacher.entity, move_by, stack_from_left);
 
         if (attached) {
             const [, fork] = attached;
@@ -155,7 +155,7 @@ export class AutoTiler {
             if (monitor) {
                 if (fork.is_toplevel && fork.smart_gapped && fork.right) {
                     fork.smart_gapped = false;
-                    let rect = ext.monitor_work_area(fork.monitor);
+                    const rect = ext.monitor_work_area(fork.monitor);
 
                     rect.x += ext.gap_outer;
                     rect.y += ext.gap_outer;
@@ -246,7 +246,7 @@ export class AutoTiler {
             if (reflow_fork) {
                 const fork = reflow_fork[1];
                 if (fork.is_toplevel && ext.settings.smart_gaps() && fork.right === null) {
-                    let rect = ext.monitor_work_area(fork.monitor);
+                    const rect = ext.monitor_work_area(fork.monitor);
                     fork.set_area(rect);
                     fork.smart_gapped = true;
                 }
@@ -382,7 +382,7 @@ export class AutoTiler {
         // If it appears to not be attaching to anything, assume we are attaching to its sibling
         if (attach_to === null) {
             if (fork.left.inner.kind === 2 && fork.right?.inner.kind === 2) {
-                let attaching = fork.left.is_window(win.entity) ? fork.right.inner.entity : fork.left.inner.entity;
+                const attaching = fork.left.is_window(win.entity) ? fork.right.inner.entity : fork.left.inner.entity;
 
                 attach_to = ext.windows.get(attaching);
             } else if (!windowless) {
@@ -499,8 +499,8 @@ export class AutoTiler {
         const focused = ext.focus_window();
         if (!focused) return;
 
-        let wm_class = focused.meta.get_wm_class();
-        let wm_title = focused.meta.get_title();
+        const wm_class = focused.meta.get_wm_class();
+        const wm_title = focused.meta.get_title();
         let float_except = false;
 
         if (wm_class != null && wm_title != null) {
@@ -674,7 +674,7 @@ export class AutoTiler {
             return Err('no window has been previously focused');
         }
 
-        let onto = ext.windows.get(prev);
+        const onto = ext.windows.get(prev);
 
         if (!onto) {
             return Err('no focus window');
@@ -747,7 +747,7 @@ export function cursor_placement(ext: Ext, area: Mtk.Rectangle, cursor: Mtk.Rect
 
     const [, side] = geom.nearest_side(ext, [cursor.x, cursor.y], area);
 
-    let res: null | [lib.Orientation, boolean] =
+    const res: null | [lib.Orientation, boolean] =
         side === LEFT
             ? [HORIZONTAL, true]
             : side === RIGHT

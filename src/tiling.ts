@@ -3,7 +3,6 @@ import * as GrabOp from './grab_op.js';
 import * as Lib from './lib.js';
 import * as Log from './log.js';
 import * as Node from './node.js';
-import * as Tags from './tags.js';
 import * as window from './window.js';
 import * as geom from './geom.js';
 import * as exec from './executor.js';
@@ -13,6 +12,7 @@ import type { Ext } from './extension.js';
 import type { NodeStack } from './node.js';
 import { AutoTiler } from './auto_tiler.js';
 import { Fork } from './fork.js';
+import Tags from './tags.js';
 
 import Meta from 'gi://Meta';
 import Mtk from 'gi://Mtk';
@@ -29,7 +29,7 @@ export enum Direction {
 }
 
 export class Tiler {
-    private keybindings: Object;
+    private keybindings;
 
     window: Entity | null = null;
 
@@ -85,7 +85,7 @@ export class Tiler {
     }
 
     change(overlay: St.Viewport | Mtk.Rectangle, rect: Mtk.Rectangle, dx: number, dy: number, dw: number, dh: number): Tiler {
-        let changed = new Mtk.Rectangle({
+        const changed = new Mtk.Rectangle({
             x: overlay.x + dx * rect.width,
             y: overlay.y + dy * rect.height,
             width: overlay.width + dw * rect.width,
@@ -109,7 +109,7 @@ export class Tiler {
         }
 
         // Check that corrected Mtk.Rectangle fits on monitors
-        let monitors = tile_monitors(changed);
+        const monitors = tile_monitors(changed);
 
         // Do not use change if there are no matching displays
         if (monitors.length == 0) return this;
@@ -253,7 +253,7 @@ export class Tiler {
 
         if (fork.is_toplevel && fork.smart_gapped) {
             fork.smart_gapped = false;
-            let rect = ext.monitor_work_area(fork.monitor);
+            const rect = ext.monitor_work_area(fork.monitor);
 
             rect.x += ext.gap_outer;
             rect.y += ext.gap_outer;
@@ -313,7 +313,7 @@ export class Tiler {
             fork.left = Node.Node.window(focused.entity);
         }
 
-        let modifier = new_fork ?? fork;
+        const modifier = new_fork ?? fork;
         modifier.set_orientation(orientation);
         ext.auto_tiler.forest.on_attach(modifier.entity, focused.entity);
         ext.auto_tiler.tile(ext, fork, fork.area);
@@ -341,7 +341,7 @@ export class Tiler {
 
         if (fork.is_toplevel && fork.smart_gapped) {
             fork.smart_gapped = false;
-            let rect = ext.monitor_work_area(fork.monitor);
+            const rect = ext.monitor_work_area(fork.monitor);
 
             rect.x += ext.gap_outer;
             rect.y += ext.gap_outer;
@@ -376,7 +376,7 @@ export class Tiler {
                 fork.left = Node.Node.window(fentity);
             }
 
-            let modifier = new_fork ?? fork;
+            const modifier = new_fork ?? fork;
             modifier.set_orientation(orient);
             forest.on_attach(modifier.entity, fentity);
             ext.auto_tiler.tile(ext, fork, fork.area);
@@ -448,9 +448,9 @@ export class Tiler {
 
                 const grab_op = new GrabOp.GrabOp(this.window as Entity, before);
 
-                let crect = grab_op.rect.copy();
+                const crect = grab_op.rect.copy();
 
-                let resize = (mov: Mtk.Rectangle, func: (m: Mtk.Rectangle, a: Mtk.Rectangle, mov: Mtk.Rectangle) => boolean) => {
+                const resize = (mov: Mtk.Rectangle, func: (m: Mtk.Rectangle, a: Mtk.Rectangle, mov: Mtk.Rectangle) => boolean) => {
                     if (func(toparea, crect, mov) || crect.equal(grab_op.rect)) return;
 
                     (ext.auto_tiler as AutoTiler).forest.resize(
@@ -488,7 +488,7 @@ export class Tiler {
             const monitor_id = ext.monitors.get(this.window);
             if (monitor_id) {
                 const monitor = ext.monitor_work_area(monitor_id[0]);
-                let rect = this.rect(ext, monitor);
+                const rect = this.rect(ext, monitor);
 
                 if (rect) {
                     callback(monitor, rect);
@@ -527,7 +527,7 @@ export class Tiler {
             new Mtk.Rectangle({ x: mov2[0], y: mov2[1], width: mov2[2], height: mov2[3] }),
             (work_area, crect, mov) => {
                 applyRect(crect, mov);
-                let before = crect.copy();
+                const before = crect.copy();
                 clampRect(crect, work_area);
                 const diff = diffRect(before, crect);
                 applyRect(crect, new Mtk.Rectangle({ width: -diff.x, height: -diff.y }));
@@ -593,7 +593,7 @@ export class Tiler {
                     }
 
                     if (!watching) {
-                        let movement = { src: focused.meta.get_frame_rect() };
+                        const movement = { src: focused.meta.get_frame_rect() };
 
                         focused.ignore_detach = true;
                         at.detach_window(ext, focused.entity);
@@ -829,9 +829,9 @@ export class Tiler {
     }
 
     snap(ext: Ext, win: window.ShellWindow) {
-        let mon_geom = ext.monitor_work_area(win.meta.get_monitor());
+        const mon_geom = ext.monitor_work_area(win.meta.get_monitor());
         if (mon_geom) {
-            let rect = win.rect();
+            const rect = win.rect();
             const columns = Math.floor(mon_geom.width / ext.column_size);
             const rows = Math.floor(mon_geom.height / ext.row_size);
             this.change(rect, monitor_rect(mon_geom, columns, rows), 0, 0, 0, 0);
@@ -850,7 +850,7 @@ export function locate_monitor(
     if (!win.actor_exists()) return null;
 
     const from = win.meta.get_monitor();
-    const ref = win.meta.get_work_area_for_monitor(from) as any;
+    const ref = win.meta.get_work_area_for_monitor(from);
     const n_monitors = global.display.get_n_monitors();
 
     const { UP, DOWN, LEFT } = Meta.DisplayDirection;
@@ -940,9 +940,9 @@ function move_window_or_monitor(
 }
 
 function tile_monitors(rect: Mtk.Rectangle): Array<Mtk.Rectangle> {
-    let total_size = (a: Mtk.Rectangle, b: Mtk.Rectangle): number => a.width * a.height - b.width * b.height;
+    const total_size = (a: Mtk.Rectangle, b: Mtk.Rectangle): number => a.width * a.height - b.width * b.height;
 
-    let workspace = global.workspace_manager.get_active_workspace();
+    const workspace = global.workspace_manager.get_active_workspace();
     return Main.layoutManager.monitors
         .map((_mon, i: number) => workspace.get_work_area_for_monitor(i))
         .filter((monitor: Mtk.Rectangle) => {

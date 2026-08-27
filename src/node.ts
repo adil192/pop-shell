@@ -218,7 +218,6 @@ export class Node {
             case 1:
                 const fork = tiler.forks.get(this.inner.entity);
                 if (fork) {
-                    record;
                     fork.measure(tiler, ext, area, record);
                 }
 

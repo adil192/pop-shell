@@ -48,7 +48,7 @@ export function current_monitor(): Mtk.Rectangle {
 
 // Fetch Mtk.Rectangle that represents the cursor
 export function cursor_rect(): Mtk.Rectangle {
-    let [x, y] = global.get_pointer();
+    const [x, y] = global.get_pointer();
     return new Mtk.Rectangle({
         x, y, width: 1, height: 1
     });
@@ -62,7 +62,7 @@ export function dbg<T>(value: T): T {
 /// Missing from the Clutter API is an Actor children iterator
 export function* get_children(actor: Clutter.Actor): IterableIterator<Clutter.Actor> {
     let nth = 0;
-    let children = actor.get_n_children();
+    const children = actor.get_n_children();
 
     while (nth < children) {
         const child = actor.get_child_at_index(nth);
@@ -119,11 +119,11 @@ export function round_increment(value: number, increment: number): number {
 }
 
 export function round_to(n: number, digits: number): number {
-    let m = Math.pow(10, digits);
+    const m = Math.pow(10, digits);
     n = parseFloat((n * m).toFixed(11));
     return Math.round(n) / m;
 }
 
-export function separator(): any {
+export function separator(): St.Widget {
     return new St.BoxLayout({ styleClass: 'pop-shell-separator', x_expand: true });
 }

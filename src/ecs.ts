@@ -10,6 +10,7 @@
 /// - The second 32-bit integer is the generation.
 
 import { Executor } from './executor.js';
+import { Tags } from './tags.js';
 
 export type Entity = [number, number];
 
@@ -33,7 +34,7 @@ export class Storage<T> {
     private store: Array<[number, T] | null>;
 
     constructor() {
-        this.store = new Array();
+        this.store = [];
     }
 
     /// Private method for iterating across allocated slots
@@ -77,7 +78,7 @@ export class Storage<T> {
 
     /// Fetches the component for this entity, if it exists
     get(entity: Entity): T | null {
-        let [id, gen] = entity;
+        const [id, gen] = entity;
         const val = this.store[id];
         return val && val[0] == gen ? val[1] : null;
     }
@@ -96,9 +97,9 @@ export class Storage<T> {
 
     /// Assigns component to an entity
     insert(entity: Entity, component: T) {
-        let [id, gen] = entity;
+        const [id, gen] = entity;
 
-        let length = this.store.length;
+        const length = this.store.length;
         if (length >= id) {
             this.store.fill(null, length, id);
         }
@@ -151,15 +152,15 @@ export class Storage<T> {
 /// - An array for storing tags associated with an entity
 export class World {
     private entities_: Array<Entity>;
-    private storages: Array<Storage<any>>;
-    private tags_: Array<any>;
+    private storages: Array<Storage<unknown>>;
+    private tags_: Array<Set<Tags>>;
     private free_slots: Array<number>;
 
     constructor() {
-        this.entities_ = new Array();
-        this.storages = new Array();
-        this.tags_ = new Array();
-        this.free_slots = new Array();
+        this.entities_ = [];
+        this.storages = [];
+        this.tags_ = [];
+        this.free_slots = [];
     }
 
     /// The total capacity of the entity array
@@ -180,7 +181,7 @@ export class World {
     /// Fetches tags associated with an entity
     ///
     /// Tags are essentially a dense set of small components
-    tags(entity: Entity): any {
+    tags(entity: Entity): Set<Tags> {
         return this.tags_[entity[0]];
     }
 
@@ -195,13 +196,14 @@ export class World {
     ///
     /// Find the first available slot, and increment the generation.
     create_entity(): Entity {
-        let slot = this.free_slots.pop();
+        const slot = this.free_slots.pop();
 
+        let entity: Entity;
         if (slot) {
-            var entity = this.entities_[slot];
+            entity = this.entities_[slot];
             entity[1] += 1;
         } else {
-            var entity = entity_new(this.capacity, 0);
+            entity = entity_new(this.capacity, 0);
             this.entities_.push(entity);
             this.tags_.push(new Set());
         }
@@ -222,17 +224,17 @@ export class World {
     }
 
     /// Adds a new tag to the given entity
-    add_tag(entity: Entity, tag: any) {
+    add_tag(entity: Entity, tag: Tags) {
         this.tags(entity).add(tag);
     }
 
     /// Returns `true` if this tag exists for the given entity
-    contains_tag(entity: Entity, tag: any): boolean {
+    contains_tag(entity: Entity, tag: Tags): boolean {
         return this.tags(entity).has(tag);
     }
 
     /// Deletes a tag from the given entity
-    delete_tag(entity: Entity, tag: any) {
+    delete_tag(entity: Entity, tag: Tags) {
         this.tags(entity).delete(tag);
     }
 
@@ -240,14 +242,14 @@ export class World {
     ///
     /// This will be used to easily remove components when deleting an entity.
     register_storage<T>(): Storage<T> {
-        let storage = new Storage<T>();
+        const storage = new Storage<T>();
         this.storages.push(storage);
         return storage;
     }
 
     /// Unregisters an old component storage from our world
-    unregister_storage(storage: Storage<any>) {
-        let matched = this.storages.indexOf(storage);
+    unregister_storage(storage: Storage<unknown>) {
+        const matched = this.storages.indexOf(storage);
         if (matched) {
             swap_remove(this.storages, matched);
         }
@@ -279,5 +281,5 @@ export class System<T> extends World {
     }
 
     /** Executs an event on the system */
-    run(_event: T): void {}
+    run(_event: T): void { }
 }

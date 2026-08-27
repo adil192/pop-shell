@@ -1,6 +1,6 @@
 import * as lib from './lib.js';
 import * as log from './log.js';
-import * as Tags from './tags.js';
+import Tags from './tags.js';
 import * as utils from './utils.js';
 import type { Entity } from './ecs.js';
 import type { Ext } from './extension.js';
@@ -16,7 +16,7 @@ import Clutter from 'gi://Clutter';
 import Mtk from 'gi://Mtk';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-export var window_tracker = Shell.WindowTracker.get_default();
+export const window_tracker = Shell.WindowTracker.get_default();
 
 /** Contains SourceID of a restack operation. Used to prevent multiple restacks. */
 let SCHEDULED_RESTACK: number | null = null;
@@ -66,11 +66,11 @@ export class ShellWindow {
 
     prev_rect: null | Mtk.Rectangle = null;
 
-    window_app: any;
+    window_app: Shell.App;
 
     private border_size = 0;
 
-    constructor(entity: Entity, window: Meta.Window, window_app: any, ext: Ext) {
+    constructor(entity: Entity, window: Meta.Window, window_app: Shell.App, ext: Ext) {
         this.window_app = window_app;
 
         this.entity = entity;
@@ -106,7 +106,7 @@ export class ShellWindow {
 
     private bind_window_events() {
         this.ext.window_signals
-            .get_or(this.entity, () => new Array())
+            .get_or(this.entity, () => [])
             .push(
                 this.meta.connect('size-changed', () => {
                     this.window_changed();
@@ -129,8 +129,8 @@ export class ShellWindow {
     private bind_hint_events() {
         if (!this.border) return;
 
-        let settings = this.ext.settings;
-        let change_id = settings.ext.connect('changed', (_, key) => {
+        const settings = this.ext.settings;
+        const change_id = settings.ext.connect('changed', (_, key) => {
             if (this.border) {
                 if (key === 'hint-color-rgba') {
                     this.update_hint_colors();
@@ -155,7 +155,7 @@ export class ShellWindow {
      * - overlay
      */
     private update_hint_colors() {
-        let settings = this.ext.settings;
+        const settings = this.ext.settings;
         const color_value = settings.hint_color_rgba();
 
         if (this.ext.overlay) {
@@ -179,24 +179,27 @@ export class ShellWindow {
     }
 
     cmdline(): string | null {
-        let pid = this.meta.get_pid(),
-            out = null;
-        if (-1 === pid) return out;
+        const pid = this.meta.get_pid();
+        if (pid === -1) return null;
+
+
 
         const path = '/proc/' + pid + '/cmdline';
-        if (!utils.exists(path)) return out;
+        if (!utils.exists(path)) return null;
 
         const result = utils.read_to_string(path);
+        let out: string | null;
         if (result.kind == 1) {
             out = result.value.trim();
         } else {
+            out = null;
             log.error(`failed to fetch cmdline: ${result.value.format()}`);
         }
 
         return out;
     }
 
-    icon(_ext: Ext, size: number): any {
+    icon(_ext: Ext, size: number): Clutter.Actor {
         let icon = this.window_app.create_icon_texture(size);
 
         if (!icon) {
@@ -232,7 +235,7 @@ export class ShellWindow {
         const display = this.meta.get_display();
 
         if (display) {
-            let monitor_count = display.get_n_monitors();
+            const monitor_count = display.get_n_monitors();
             return (this.is_maximized() || this.smart_gapped) && monitor_count == 1;
         }
 
@@ -244,7 +247,7 @@ export class ShellWindow {
     }
 
     is_tilable(ext: Ext): boolean {
-        let tile_checks = () => {
+        const tile_checks = () => {
             let wm_class = this.meta.get_wm_class();
 
             if (wm_class !== null && wm_class.trim().length === 0) {
@@ -336,8 +339,8 @@ export class ShellWindow {
     }
 
     swap(ext: Ext, other: ShellWindow): void {
-        let ar = this.rect().copy();
-        let br = other.rect().copy();
+        const ar = this.rect().copy();
+        const br = other.rect().copy();
 
         other.move(ext, ar);
         this.move(ext, br, () => place_pointer_on(this.ext, this.meta));
@@ -364,7 +367,7 @@ export class ShellWindow {
         this.restack();
         this.update_border_style();
         if (this.ext.settings.active_hint()) {
-            let border = this.border;
+            const border = this.border;
 
             const permitted = () => {
                 return (
@@ -403,7 +406,7 @@ export class ShellWindow {
     same_workspace() {
         const workspace = this.meta.get_workspace();
         if (workspace) {
-            let workspace_id = workspace.index();
+            const workspace_id = workspace.index();
             return workspace_id === global.workspace_manager.get_active_workspace_index();
         }
         return false;
@@ -494,7 +497,7 @@ export class ShellWindow {
     }
 
     get always_top_windows(): Clutter.Actor[] {
-        let above_windows: Clutter.Actor[] = new Array();
+        const above_windows: Clutter.Actor[] = [];
 
         for (const actor of global.get_window_actors()) {
             if (!actor) continue;
@@ -506,7 +509,7 @@ export class ShellWindow {
     }
 
     hide_border() {
-        let b = this.border;
+        const b = this.border;
         if (b) b.hide();
     }
 
@@ -650,8 +653,8 @@ function place_pointer_on(ext: Ext, win: Meta.Window) {
     let x = rect.x;
     let y = rect.y;
 
-    let key = Object.keys(focus.FocusPosition)[ext.settings.mouse_cursor_focus_location()];
-    let pointer_position_ = focus.FocusPosition[key as keyof typeof focus.FocusPosition];
+    const key = Object.keys(focus.FocusPosition)[ext.settings.mouse_cursor_focus_location()];
+    const pointer_position_ = focus.FocusPosition[key as keyof typeof focus.FocusPosition];
 
     switch (pointer_position_) {
         case focus.FocusPosition.TopLeft:

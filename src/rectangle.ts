@@ -5,7 +5,7 @@ export function fmtRect(rect: Mtk.Rectangle): string {
 }
 
 export function clampRect(rect: Mtk.Rectangle, other: Mtk.Rectangle) {
-    let [intersects, intersection] = rect.intersect(other);
+    const [intersects, intersection] = rect.intersect(other);
     if (!intersects) return;
     rect.x = intersection.x;
     rect.y = intersection.y;

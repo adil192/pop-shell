@@ -1,8 +1,9 @@
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
+import Meta from 'gi://Meta';
 
-const CONF_DIR: string = GLib.get_user_config_dir() + '/pop-shell';
-export var CONF_FILE: string = CONF_DIR + '/config.json';
+const CONF_DIR = GLib.get_user_config_dir() + '/pop-shell';
+export const CONF_FILE = CONF_DIR + '/config.json';
 
 export interface FloatRule {
     class?: string;
@@ -139,14 +140,14 @@ export class Config {
         return false;
     }
 
-    skiptaskbar_shall_hide(meta_window: any) {
-        let wmclass = meta_window.get_wm_class();
-        let wmtitle = meta_window.get_title();
+    skiptaskbar_shall_hide(meta_window: Meta.Window) {
+        const wmclass = meta_window.get_wm_class();
+        const wmtitle = meta_window.get_title();
 
         if (!meta_window.is_skip_taskbar()) return false;
 
         for (const rule of this.skiptaskbarhidden.concat(SKIPTASKBAR_EXCEPTIONS)) {
-            if (rule.class) {
+            if (rule.class && wmclass) {
                 if (!new RegExp(rule.class, 'i').test(wmclass)) {
                     continue;
                 }
@@ -168,7 +169,7 @@ export class Config {
         const conf = Config.from_config();
 
         if (conf.tag === 0) {
-            let c = conf.value;
+            const c = conf.value;
             this.float = c.float;
             this.log_on_focus = c.log_on_focus;
         } else {
@@ -219,7 +220,7 @@ export class Config {
 
     remove_user_exception(wmclass: string | undefined, wmtitle: string | undefined) {
         let index = 0;
-        let found = new Array();
+        const found = [];
         for (const value of this.float.values()) {
             if (value.class === wmclass && value.title === wmtitle) {
                 found.push(index);
@@ -238,7 +239,7 @@ export class Config {
     static from_json(json: string): Config {
         try {
             return JSON.parse(json);
-        } catch (error) {
+        } catch (_) {
             return new Config();
         }
     }
@@ -246,11 +247,11 @@ export class Config {
     private static from_config(): Result<Config> {
         const stream = Config.read();
         if (stream.tag === 1) return stream;
-        let value = Config.from_json(stream.value);
+        const value = Config.from_json(stream.value);
         return { tag: 0, value };
     }
 
-    private static gio_file(): Result<any> {
+    private static gio_file(): Result<Gio.File> {
         try {
             const conf = Gio.File.new_for_path(CONF_FILE);
 
@@ -285,7 +286,7 @@ export class Config {
         }
     }
 
-    private static write(data: string): Result<null> {
+    private static write(data: string): Result<Gio.File> {
         try {
             const file = Config.gio_file();
             if (file.tag === 1) return file;
@@ -303,7 +304,7 @@ export class Config {
     }
 }
 
-function set_to_json(_key: string, value: any) {
+function set_to_json(_key: string, value: unknown) {
     if (typeof value === 'object' && value instanceof Set) {
         return [...value];
     }

@@ -23,28 +23,28 @@ const IFACE: string = `<node>
 </node>`;
 
 export class Service {
-    dbus: any;
-    id: any;
+    dbus;
+    id;
 
-    FocusLeft: () => void = () => {};
-    FocusRight: () => void = () => {};
-    FocusUp: () => void = () => {};
-    FocusDown: () => void = () => {};
-    Launcher: () => void = () => {};
-    WindowFocus: (window: [number, number]) => void = () => {};
+    FocusLeft: () => void = () => { };
+    FocusRight: () => void = () => { };
+    FocusUp: () => void = () => { };
+    FocusDown: () => void = () => { };
+    Launcher: () => void = () => { };
+    WindowFocus: (window: [number, number]) => void = () => { };
     WindowList: () => Array<[[number, number], string, string, string]> = () => [];
-    WindowQuit: (window: [number, number]) => void = () => {};
+    WindowQuit: (window: [number, number]) => void = () => { };
 
     constructor() {
         this.dbus = Gio.DBusExportedObject.wrapJSObject(IFACE, this);
 
-        const onBusAcquired = (conn: any) => {
+        const onBusAcquired = (conn: Gio.DBusConnection) => {
             this.dbus.export(conn, '/com/System76/PopShell');
         };
 
-        function onNameAcquired() {}
+        function onNameAcquired() { }
 
-        function onNameLost() {}
+        function onNameLost() { }
 
         this.id = Gio.bus_own_name(
             Gio.BusType.SESSION,

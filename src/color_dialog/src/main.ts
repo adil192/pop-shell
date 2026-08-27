@@ -16,8 +16,8 @@ function getExtensionPath(uuid: string) {
     let ext_path = null;
 
     for (let i = 0; i < EXT_PATH_DEFAULTS.length; i++) {
-        let path = EXT_PATH_DEFAULTS[i];
-        let file = Gio.File.new_for_path(path + uuid);
+        const path = EXT_PATH_DEFAULTS[i];
+        const file = Gio.File.new_for_path(path + uuid);
         log(file.get_path()!);
         if (file.query_exists(null)) {
             ext_path = file;
@@ -29,14 +29,14 @@ function getExtensionPath(uuid: string) {
 }
 
 function getSettings(schema: string) {
-    let extensionPath = getExtensionPath('pop-shell@system76.com');
+    const extensionPath = getExtensionPath('pop-shell@system76.com');
     if (!extensionPath) throw new Error('getSettings() can only be called when extension is available');
 
     // The following will load a custom path for a user defined gsettings/schemas folder
     const GioSSS = Gio.SettingsSchemaSource;
     const schemaDir = extensionPath.get_child('schemas');
 
-    let schemaSource = schemaDir.query_exists(null)
+    const schemaSource = schemaDir.query_exists(null)
         ? GioSSS.new_from_directory(schemaDir.get_path()!, GioSSS.get_default(), false)
         : GioSSS.get_default();
 
@@ -52,16 +52,16 @@ function getSettings(schema: string) {
  * Using the settings.connect('changed') mechanism, the extension is able to listen to when the color changes in realtime.
  */
 function launch_color_dialog() {
-    let popshell_settings = getSettings('org.gnome.shell.extensions.pop-shell');
+    const popshell_settings = getSettings('org.gnome.shell.extensions.pop-shell');
 
-    let color_dialog = new Gtk.ColorChooserDialog({
+    const color_dialog = new Gtk.ColorChooserDialog({
         title: 'Choose Color',
     });
     color_dialog.show_editor = true;
     color_dialog.show_all();
 
     // Use the new spec format for Gtk.Color thru Gdk.RGBA
-    let rgba = new Gdk.RGBA();
+    const rgba = new Gdk.RGBA();
     if (rgba.parse(popshell_settings.get_string('hint-color-rgba'))) {
         color_dialog.set_rgba(rgba);
     } else {
@@ -69,7 +69,7 @@ function launch_color_dialog() {
         color_dialog.set_rgba(rgba);
     }
 
-    let response = color_dialog.run();
+    const response = color_dialog.run();
 
     if (response === Gtk.ResponseType.CANCEL) {
         color_dialog.destroy();

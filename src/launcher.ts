@@ -31,11 +31,11 @@ interface SearchOption {
 export class Launcher extends search.Search {
     ext: Ext;
     options: Map<number, SearchOption> = new Map();
-    options_array: Array<SearchOption> = new Array();
+    options_array: Array<SearchOption> = [];
     windows: arena.Arena<ShellWindow> = new arena.Arena();
     service: null | service.LauncherService = null;
     append_id: null | number = null;
-    active_menu: null | any = null;
+    active_menu: PopupMenu.PopupMenu | null = null;
     opened: boolean = false;
 
     constructor(ext: Ext) {
@@ -181,13 +181,13 @@ export class Launcher extends search.Search {
 
             const option = this.options.get(id);
             if (option) {
-                (option.menu as any).removeAll();
+                option.menu.removeAll();
                 for (const opt of options) {
                     context.addContext(option.menu, opt.name, () => {
                         this.service?.activate_context(id, opt.id);
                     });
 
-                    (option.menu as any).toggle();
+                    option.menu.toggle();
                 }
             } else {
                 log.error(`did not find id: ${id}`);
@@ -203,7 +203,7 @@ export class Launcher extends search.Search {
         super.clear();
     }
 
-    launch_desktop_app(app: any, path: string) {
+    launch_desktop_app(app: GioUnix.DesktopAppInfo, path: string) {
         try {
             app.launch([], null);
         } catch (why) {
@@ -283,7 +283,7 @@ export class Launcher extends search.Search {
         log.warn('pop-shell: deprecated function called (launcher::load_desktop_files)');
     }
 
-    locate_by_app_info(info: any): null | ShellWindow {
+    locate_by_app_info(info: GioUnix.DesktopAppInfo): null | ShellWindow {
         const workspace = this.ext.active_workspace();
         const exec_info: null | string = info.get_string('Exec');
         const exec = exec_info?.split(' ').shift()?.split('/').pop();
@@ -294,12 +294,12 @@ export class Launcher extends search.Search {
                 const pid = window.meta.get_pid();
                 if (pid !== -1) {
                     try {
-                        let f = Gio.File.new_for_path(`/proc/${pid}/cmdline`);
+                        const f = Gio.File.new_for_path(`/proc/${pid}/cmdline`);
                         const [, bytes] = f.load_contents(null);
                         const output: string = imports.byteArray.toString(bytes);
                         const cmd = output.split(' ').shift()?.split('/').pop();
                         if (cmd === exec) return window;
-                    } catch (_) { }
+                    } catch (_) { /* empty */ }
                 }
             }
         }
@@ -338,7 +338,7 @@ export class Launcher extends search.Search {
 
         this.dialog.dialogLayout.x = mon_width / 2 - this.dialog.dialogLayout.width / 2;
 
-        let height = mon_work_area.height >= 900 ? mon_work_area.height / 2 : mon_work_area.height / 3.5;
+        const height = mon_work_area.height >= 900 ? mon_work_area.height / 2 : mon_work_area.height / 3.5;
         this.dialog.dialogLayout.y = height - this.dialog.dialogLayout.height / 2;
     }
 

@@ -1,4 +1,8 @@
-export var Tiled = 0;
-export var Floating = 1;
-export var Blocked = 2;
-export var ForceTile = 3;
+export enum Tags {
+    Tiled = 0,
+    Floating = 1,
+    Blocked = 2,
+    ForceTile = 3,
+}
+
+export default Tags;
