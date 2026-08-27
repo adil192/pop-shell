@@ -9,6 +9,7 @@ export default defineConfig({
     extends: [js.configs.recommended, tseslint.configs.recommended],
     rules: {
         'no-case-declarations': 'off',
+        "@typescript-eslint/no-namespace": "off",
         "@typescript-eslint/no-unused-vars": ["warn", {
             "args": "all",
             "argsIgnorePattern": "^_",

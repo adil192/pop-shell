@@ -1,5 +1,6 @@
 {
     "name": "pop-shell",
+    "main": "src/extension.ts",
     "type": "module",
     "private": true,
     "sideEffects": false,
