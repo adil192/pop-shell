@@ -3,7 +3,6 @@ import * as GrabOp from './grab_op.js';
 import * as Lib from './lib.js';
 import * as Log from './log.js';
 import * as Node from './node.js';
-import * as Tags from './tags.js';
 import * as window from './window.js';
 import * as geom from './geom.js';
 import * as exec from './executor.js';
@@ -13,6 +12,7 @@ import type { Ext } from './extension.js';
 import type { NodeStack } from './node.js';
 import { AutoTiler } from './auto_tiler.js';
 import { Fork } from './fork.js';
+import Tags from './tags.js';
 
 import Meta from 'gi://Meta';
 import Mtk from 'gi://Mtk';
@@ -850,7 +850,7 @@ export function locate_monitor(
     if (!win.actor_exists()) return null;
 
     const from = win.meta.get_monitor();
-    const ref = win.meta.get_work_area_for_monitor(from) as any;
+    const ref = win.meta.get_work_area_for_monitor(from);
     const n_monitors = global.display.get_n_monitors();
 
     const { UP, DOWN, LEFT } = Meta.DisplayDirection;

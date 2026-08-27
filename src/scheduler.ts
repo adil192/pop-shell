@@ -15,7 +15,7 @@ const SchedulerInterface =
 const SchedulerProxy = Gio.DBusProxy.makeProxyWrapper(SchedulerInterface);
 
 const SchedProxy: ReturnType<typeof SchedulerProxy>
-    /** @ts-ignore */
+    /** @ts-expect-error TypeScript bindings don't have `new` keyword */
     = new SchedulerProxy(Gio.DBus.system, 'com.system76.Scheduler', '/com/system76/Scheduler');
 
 let foreground: number = 0;
@@ -30,7 +30,7 @@ export function setForeground(win: Meta.Window) {
         foreground = pid;
 
         try {
-            SchedProxy.SetForegroundProcessRemote(pid, (_result: any, error: any, _fds: any) => {
+            SchedProxy.SetForegroundProcessRemote(pid, (_result: unknown, error: unknown, _fds: unknown) => {
                 if (error !== null) errorHandler(error);
             });
         } catch (error) {
@@ -39,7 +39,7 @@ export function setForeground(win: Meta.Window) {
     }
 }
 
-function errorHandler(error: any) {
+function errorHandler(error: unknown) {
     log.warn(`system76-scheduler may not be installed and running: ${error}`);
     failed = true;
 }

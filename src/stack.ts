@@ -18,7 +18,7 @@ const INACTIVE_TAB = 'pop-shell-tab pop-shell-tab-inactive';
 const URGENT_TAB = 'pop-shell-tab pop-shell-tab-urgent';
 const INACTIVE_TAB_STYLE = '#9B8E8A';
 
-export var TAB_HEIGHT: number = 24;
+export const TAB_HEIGHT: number = 24;
 
 interface Tab {
     active: boolean;
@@ -250,7 +250,7 @@ export class Stack {
                 const button = this.buttons.get(component.button);
                 if (button) {
                     button.set_style_class_name(name);
-                    let tab_color = '';
+                    let tab_color: string;
                     if (component.active) {
                         const settings = this.ext.settings;
                         const color_value = settings.hint_color_rgba();
@@ -353,7 +353,7 @@ export class Stack {
         const settings = this.ext.settings;
         const button = this.buttons.get(tab.button);
         if (button) {
-            let tab_color = '';
+            let tab_color: string;
             if (Ecs.entity_eq(tab.entity, this.active)) {
                 const color_value = settings.hint_color_rgba();
                 tab_color = `background: ${color_value}; color: ${utils.is_dark(color_value) ? 'white' : 'black'}`;
@@ -423,7 +423,7 @@ export class Stack {
         for (const b of this.buttons.values()) {
             try {
                 b.destroy();
-            } catch (e) { }
+            } catch (_) { /* empty */ }
         }
 
         if (this.widgets) {
@@ -713,7 +713,7 @@ export class Stack {
 
     private actor_exec(comp: number, entity: Entity, func: (window: Clutter.Actor) => void) {
         this.window_exec(comp, entity, (window) => {
-            func(window.meta.get_compositor_private<Clutter.Actor>() as Clutter.Actor);
+            func(window.meta.get_compositor_private<Clutter.Actor>());
         });
     }
 

@@ -14,6 +14,7 @@ export class Error {
     }
 
     *chain(): IterableIterator<Error> {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         let current: Error | null = this;
 
         while (current != null) {

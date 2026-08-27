@@ -124,6 +124,6 @@ export function round_to(n: number, digits: number): number {
     return Math.round(n) / m;
 }
 
-export function separator(): any {
+export function separator(): St.Widget {
     return new St.BoxLayout({ styleClass: 'pop-shell-separator', x_expand: true });
 }

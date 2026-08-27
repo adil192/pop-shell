@@ -46,12 +46,12 @@ interface RemoveException {
 type Event = SelectWindow | SwitchTo | ToggleException | RemoveException;
 
 interface View {
-    widget: any;
+    widget: Gtk.Box;
 
     callback: (event: Event) => void;
 }
 
-function exceptions_button(): any {
+function exceptions_button(): Gtk.Button {
     const title = Gtk.Label.new('System Exceptions');
     title.set_xalign(0);
 
@@ -78,11 +78,11 @@ function exceptions_button(): any {
 }
 
 export class MainView implements View {
-    widget: any;
+    widget;
 
     callback: (event: Event) => void = () => { };
 
-    private list: any;
+    private list;
 
     constructor() {
         const select = Gtk.Button.new_with_label('Select');

@@ -31,7 +31,7 @@ export function read_to_string(path: string): result.Result<string, error.Error>
 }
 
 export function source_remove(id: SignalID): boolean {
-    return GLib.source_remove(id) as any;
+    return GLib.source_remove(id);
 }
 
 export function exists(path: string): boolean {
@@ -45,7 +45,6 @@ export function exists(path: string): boolean {
  */
 export function is_dark(color: string): boolean {
     // 'rgba(251, 184, 108, 1)' - pop orange!
-    let color_val = '';
     let r = 255;
     let g = 255;
     let b = 255;
@@ -60,7 +59,7 @@ export function is_dark(color: string): boolean {
         g = parseInt(colors[1].trim());
         b = parseInt(colors[2].trim());
     } else if (color.charAt(0) === '#') {
-        color_val = color.substring(1, 7);
+        const color_val = color.substring(1, 7);
         r = parseInt(color_val.substring(0, 2), 16); // hexToR
         g = parseInt(color_val.substring(2, 4), 16); // hexToG
         b = parseInt(color_val.substring(4, 6), 16); // hexToB
@@ -78,7 +77,7 @@ export function is_dark(color: string): boolean {
 }
 
 /** Utility function for running a process in the background and fetching its standard output as a string. */
-export function async_process(argv: Array<string>, input = null, cancellable: null | any = null): Promise<string> {
+export function async_process(argv: Array<string>, input = null, cancellable: Gio.Cancellable | null = null): Promise<string> {
     let flags = Gio.SubprocessFlags.STDOUT_PIPE;
 
     if (input !== null) flags |= Gio.SubprocessFlags.STDIN_PIPE;
@@ -86,17 +85,15 @@ export function async_process(argv: Array<string>, input = null, cancellable: nu
     const proc = new Gio.Subprocess({ argv, flags });
     proc.init(cancellable);
 
-    proc.wait_async(null, (source: any, res: any) => {
-        source.wait_finish(res);
-        if (cancellable !== null) {
-            cancellable.cancel();
-        }
+    proc.wait_async(null, (source, res) => {
+        source?.wait_finish(res);
+        cancellable?.cancel();
     });
 
     return new Promise((resolve, reject) => {
-        proc.communicate_utf8_async(input, cancellable, (proc: any, res: any) => {
+        proc.communicate_utf8_async(input, cancellable, (proc, res) => {
             try {
-                const bytes = proc.communicate_utf8_finish(res)[1];
+                const bytes = proc!.communicate_utf8_finish(res)[1];
                 resolve(bytes.toString());
             } catch (e) {
                 reject(e);
@@ -138,8 +135,8 @@ export function async_process_ipc(argv: Array<string>): AsyncIPC | null {
     });
 
     const cancellable = new Gio.Cancellable();
-    child.wait_async(null, (source: any, res: any) => {
-        source.wait_finish(res);
+    child.wait_async(null, (source, res) => {
+        source?.wait_finish(res);
         cancellable.cancel();
     });
 
