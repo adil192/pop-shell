@@ -10,7 +10,7 @@ import {
     PopupSeparatorMenuItem,
     PopupMenu,
 } from 'resource:///org/gnome/shell/ui/popupMenu.js';
-import PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
+import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import { get_current_path } from './paths.js';
