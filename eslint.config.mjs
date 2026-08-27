@@ -7,4 +7,7 @@ import tseslint from 'typescript-eslint';
 export default defineConfig({
     files: ['src/**/*.{js,ts}'],
     extends: [js.configs.recommended, tseslint.configs.recommended],
+    rules: {
+        'no-case-declarations': 'off'
+    }
 });

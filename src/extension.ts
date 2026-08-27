@@ -85,10 +85,10 @@ interface Display {
     ws: Mtk.Rectangle;
 }
 
-interface Injection {
-    object: any;
-    method: string;
-    func: any;
+interface Injection<T> {
+    object: T;
+    method: keyof T;
+    func: T[keyof T];
 }
 
 export class Ext extends Ecs.System<ExtEvent> {
@@ -114,9 +114,9 @@ export class Ext extends Ecs.System<ExtEvent> {
     /** Animate window movements */
     animate_windows: boolean = true;
 
-    button: any = null;
-    button_gio_icon_auto_on: any = null;
-    button_gio_icon_auto_off: any = null;
+    button: St.Button | null = null;
+    button_auto_on_icon: string | null = null;
+    button_auto_off_icon: string | null = null;
 
     conf: Config.Config = new Config.Config();
 
@@ -167,7 +167,8 @@ export class Ext extends Ecs.System<ExtEvent> {
     ignore_display_update: boolean = false;
 
     /** Functions replaced in GNOME */
-    injections: Array<Injection> = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    injections: Array<Injection<any>> = [];
 
     /** The window that was focused before the last window */
     private prev_focused: [null | Entity, null | Entity] = [null, null];
@@ -267,8 +268,8 @@ export class Ext extends Ecs.System<ExtEvent> {
             this.window_search.close();
         };
 
-        this.dbus.WindowList = (): Array<[[number, number], string, string, string]> => {
-            const wins = [];
+        this.dbus.WindowList = () => {
+            const wins: Array<[Entity, string, string, string]> = [];
 
             for (const window of this.tab_list(Meta.TabList.NORMAL, null)) {
                 const string = window.window_app.get_id();
@@ -709,16 +710,17 @@ export class Ext extends Ecs.System<ExtEvent> {
         return entity ? this.windows.get(entity) : null;
     }
 
-    inject(object: any, method: string, func: any) {
+    inject<T>(object: T, method: keyof T, func: T[keyof T]) {
         const prev = object[method];
-        this.injections.push({ object, method, func: prev });
+        const injection: Injection<T> = { object, method, func: prev };
+        this.injections.push(injection);
         object[method] = func;
     }
 
     injections_add() {
         const screen_unlock_fn = ScreenShield.prototype['deactivate'];
-        this.inject(ScreenShield.prototype, 'deactivate', (args: any) => {
-            screen_unlock_fn.apply(screenShield, [args]);
+        this.inject(ScreenShield.prototype, 'deactivate', (animate: boolean) => {
+            screen_unlock_fn.apply(screenShield, [animate]);
             this.update_display_configuration(true);
         });
     }
@@ -2187,7 +2189,7 @@ export class Ext extends Ecs.System<ExtEvent> {
 
             if (indicator) indicator.toggle_tiled.setToggleState(false);
 
-            this.button.icon.gicon = this.button_gio_icon_auto_off; // type: Gio.Icon
+            if (this.button) this.button.icon_name = this.button_auto_off_icon;
 
             if (this.settings.active_hint()) {
                 this.show_border_on_focused();
@@ -2213,7 +2215,7 @@ export class Ext extends Ecs.System<ExtEvent> {
         this.auto_tiler = tiler;
 
         this.settings.set_tile_by_default(true);
-        this.button.icon.gicon = this.button_gio_icon_auto_on; // type: Gio.Icon
+        if (this.button) this.button.icon_name = this.button_auto_on_icon;
 
         for (const window of this.windows.values()) {
             if (window.is_tilable(this)) {

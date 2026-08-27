@@ -1,7 +1,6 @@
 import type { Ext } from './extension.js';
 
 import Clutter from 'gi://Clutter';
-import Gio from 'gi://Gio';
 import St from 'gi://St';
 
 import {
@@ -31,15 +30,15 @@ export class Indicator {
 
         const path = get_current_path();
         ext.button = this.button;
-        ext.button_gio_icon_auto_on = Gio.icon_new_for_string(`${path}/icons/pop-shell-auto-on-symbolic.svg`);
-        ext.button_gio_icon_auto_off = Gio.icon_new_for_string(`${path}/icons/pop-shell-auto-off-symbolic.svg`);
+        ext.button_auto_on_icon = `${path}/icons/pop-shell-auto-on-symbolic.svg`;
+        ext.button_auto_off_icon = `${path}/icons/pop-shell-auto-off-symbolic.svg`;
 
         const button_icon_auto_on = new St.Icon({
-            gicon: ext.button_gio_icon_auto_on,
+            icon_name: ext.button_auto_on_icon,
             style_class: 'system-status-icon',
         });
         const button_icon_auto_off = new St.Icon({
-            gicon: ext.button_gio_icon_auto_off,
+            icon_name: ext.button_auto_off_icon,
             style_class: 'system-status-icon',
         });
 
