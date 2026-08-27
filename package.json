@@ -1,14 +1,22 @@
 {
     "name": "pop-shell",
+    "main": "src/extension.ts",
     "type": "module",
     "private": true,
     "sideEffects": false,
+    "scripts": {
+        "lint": "eslint --cache"
+    },
     "devDependencies": {
-        "typescript": "^7.0.2",
+        "@eslint/js": "^10.0.1",
         "@girs/giounix-2.0": "^4.1.0",
         "@girs/gjs": "^4.1.0",
         "@girs/gnome-shell": "^50.0.4",
         "@girs/gtk-3.0": "^4.1.0",
-        "@girs/mtk-18": "^4.1.0"
+        "@girs/mtk-18": "^4.1.0",
+        "eslint": "^10.9.1",
+        "@typescript/native": "npm:typescript@^7.0.2",
+        "typescript": "npm:@typescript/typescript6@^6.0.2",
+        "typescript-eslint": "^8.68.0"
     }
 }
