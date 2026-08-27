@@ -41,6 +41,7 @@ import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
 import GObject from 'gi://GObject';
+import Shell from 'gi://Shell';
 import St from 'gi://St';
 import Meta from 'gi://Meta';
 import Mtk from 'gi://Mtk';
@@ -119,8 +120,6 @@ export class Ext extends Ecs.System<ExtEvent> {
     button_auto_off_icon: string | null = null;
 
     conf: Config.Config = new Config.Config();
-
-    conf_watch: null | [any, SignalID] = null;
 
     /** Column sizes in snap-to-grid */
     column_size: number = 32;
@@ -441,7 +440,8 @@ export class Ext extends Ecs.System<ExtEvent> {
     }
 
     /// Connects a callback signal to a GObject, and records the signal.
-    connect(object: GObject.Object | Misc.signals.EventEmitter, property: string, callback: (...args: any) => boolean | void): SignalID {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    connect(object: GObject.Object | Misc.signals.EventEmitter, property: string, callback: (...args: any[]) => boolean | void): SignalID {
         const signal = object instanceof GObject.Object
             ? object.connect(property, callback)
             : object.connect(property, callback);
@@ -451,11 +451,10 @@ export class Ext extends Ecs.System<ExtEvent> {
         } else {
             this.signals.set(object, [signal]);
         }
-
         return signal;
     }
 
-    connect_meta(win: Window.ShellWindow, signal: string, callback: (...args: any[]) => void): number {
+    connect_meta(win: Window.ShellWindow, signal: string, callback: () => void): number {
         const id = win.meta.connect(signal, () => {
             if (win.actor_exists()) callback();
         });
@@ -478,7 +477,7 @@ export class Ext extends Ecs.System<ExtEvent> {
             if (old) {
                 try {
                     GLib.source_remove(old);
-                } catch (_) { }
+                } catch (_) { /* empty */ }
             }
 
             const new_s = GLib.timeout_add(GLib.PRIORITY_LOW, 500, () => {
@@ -557,9 +556,9 @@ export class Ext extends Ecs.System<ExtEvent> {
         const ipc = utils.async_process_ipc(['gjs', '--module', path]);
 
         if (ipc) {
-            const generator = (stdout: any, res: any) => {
+            const generator: Gio.AsyncReadyCallback<Gio.DataInputStream> = (stdout, res) => {
                 try {
-                    const [bytes] = stdout.read_line_finish(res);
+                    const [bytes] = stdout!.read_line_finish(res);
                     if (bytes) {
                         if (event_handler((imports.byteArray.toString(bytes) as string).trim())) {
                             ipc.stdout.read_line_async(0, ipc.cancellable, generator);
@@ -602,7 +601,7 @@ export class Ext extends Ecs.System<ExtEvent> {
         return [primary, this.displays[1].get(primary) as Display];
     }
 
-    find_unused_workspace(monitor: number): [number, any] {
+    find_unused_workspace(monitor: number): [number, Meta.Workspace | null] {
         if (!this.auto_tiler) return [0, wom.get_workspace_by_index(0)];
 
         let id = 0;
@@ -667,7 +666,7 @@ export class Ext extends Ecs.System<ExtEvent> {
     }
 
     stack_select(select: (id: number, stack: stack.Stack) => Entity | null, focus_shift: () => void) {
-        const switched = this.stack_switch((stack: any) => {
+        const switched = this.stack_switch((stack) => {
             if (!stack) return false;
 
             const stack_con = this.auto_tiler?.forest.stacks.get(stack.idx);
@@ -1002,15 +1001,12 @@ export class Ext extends Ecs.System<ExtEvent> {
     /** Unmaximize any maximized windows on the same workspace. */
     unmaximize_workspace(win: Window.ShellWindow) {
         if (this.auto_tiler) {
-            let mon;
-            let work;
-
             if (!win.is_tilable(this)) {
                 return;
             }
 
-            mon = win.meta.get_monitor();
-            work = win.meta.get_workspace().index();
+            const mon = win.meta.get_monitor();
+            const work = win.meta.get_workspace().index();
 
             for (const [, compare] of this.windows.iter()) {
                 const is_same_space =
@@ -1063,7 +1059,7 @@ export class Ext extends Ecs.System<ExtEvent> {
     }
 
     /** Triggered when a grab operation has been ended */
-    on_grab_end(meta: Meta.Window, op?: any) {
+    on_grab_end(meta: Meta.Window, op?: number) {
         const win = this.get_window(meta);
 
         if (win !== null) {
@@ -1079,7 +1075,7 @@ export class Ext extends Ecs.System<ExtEvent> {
         this.unset_grab_op();
     }
 
-    on_grab_end_(win: Window.ShellWindow, op?: any) {
+    on_grab_end_(win: Window.ShellWindow, op?: number) {
         this.moved_by_mouse = true;
         this.size_signals_unblock(win);
 
@@ -1121,7 +1117,7 @@ export class Ext extends Ecs.System<ExtEvent> {
         if (this.auto_tiler) {
             const crect = win.rect();
             const rect = grab_op.rect;
-            if (is_move_op(op)) {
+            if (is_move_op(op!)) {
                 const cmon = win.meta.get_monitor();
                 const prev_mon = this.monitors.get(win.entity);
                 const mon_drop = prev_mon ? prev_mon[0] !== cmon : false;
@@ -1223,13 +1219,9 @@ export class Ext extends Ecs.System<ExtEvent> {
             // get the current window rect
             const rect = win.rect();
 
-            let h_ratio: number = 1;
-            let w_ratio: number = 1;
-
-            h_ratio = next_area.height / prev_area.height;
+            const h_ratio = next_area.height / prev_area.height;
             rect.height = rect.height * h_ratio;
-
-            w_ratio = next_area.width / prev_area.width;
+            const w_ratio = next_area.width / prev_area.width;
             rect.width = rect.width * w_ratio;
 
             if (next_area.x < prev_area.x) {
@@ -1406,7 +1398,7 @@ export class Ext extends Ecs.System<ExtEvent> {
     }
 
     /** Triggered when a grab operation has been started */
-    on_grab_start(meta: null | Meta.Window, op: any) {
+    on_grab_start(meta: null | Meta.Window, op: number) {
         if (!meta) return;
         const win = this.get_window(meta);
         if (win) {
@@ -1843,8 +1835,6 @@ export class Ext extends Ecs.System<ExtEvent> {
 
     /** Begin listening for signals from windows, and add any pre-existing windows. */
     signals_attach() {
-        // this.conf_watch = this.attach_config();
-
         this.tiler.queue.start(100, (movement) => {
             movement();
             return true;
@@ -1885,8 +1875,8 @@ export class Ext extends Ecs.System<ExtEvent> {
             switch (key) {
                 case 'active-hint':
                     if (indicator) indicator.toggle_active.setToggleState(this.settings.active_hint());
-
                     this.show_border_on_focused();
+                    break;
                 case 'gap-inner':
                     this.on_gap_inner();
                     break;
@@ -2087,11 +2077,6 @@ export class Ext extends Ecs.System<ExtEvent> {
             for (const signal of signals) {
                 object.disconnect(signal);
             }
-        }
-
-        if (this.conf_watch) {
-            this.conf_watch[0].disconnect(this.conf_watch[1]);
-            this.conf_watch = null;
         }
 
         this.tiler.queue.stop();
@@ -2514,7 +2499,7 @@ export class Ext extends Ecs.System<ExtEvent> {
 
         try {
             id = meta.get_stable_sequence();
-        } catch (e) {
+        } catch (_) {
             return null;
         }
 
@@ -2526,17 +2511,17 @@ export class Ext extends Ecs.System<ExtEvent> {
             const actor = meta.get_compositor_private<Clutter.Actor>();
             if (!actor) return null;
 
-            let window_app: any, name: string;
-
+            let window_app: Shell.App;
+            let name: string;
             try {
                 window_app = Window.window_tracker.get_window_app(meta);
                 name = window_app.get_name().replace(/&/g, '&amp;');
-            } catch (e) {
+            } catch (_) {
                 return null;
             }
 
             // Only permit normal, dialog, and modal dialogs
-            const window_type = (meta as any).get_window_type();
+            const window_type = meta.get_window_type();
             if (window_type !== 0 && window_type !== 3 && window_type !== 4) {
                 return null;
             }
@@ -2737,12 +2722,12 @@ function stylesheet_path(name: string) {
 }
 
 // Supplements the loaded theme with the extension's theme.
-function load_theme(style: Style): string | any {
+function load_theme(style: Style): string | null {
     const pop_stylesheet = Number(style);
     try {
         const theme_context = St.ThemeContext.get_for_stage(global.stage);
 
-        const existing_theme: null | any = theme_context.get_theme();
+        const existing_theme: St.Theme | null = theme_context.get_theme();
 
         const pop_stylesheet_path = STYLESHEET_PATHS[pop_stylesheet];
 
@@ -2773,7 +2758,7 @@ function load_theme(style: Style): string | any {
     }
 }
 
-function* iter_workspaces(manager: any): IterableIterator<[number, any]> {
+function* iter_workspaces(manager: Meta.WorkspaceManager): IterableIterator<[number, Meta.Workspace]> {
     let idx = 0;
     let ws = manager.get_workspace_by_index(idx);
     while (ws !== null) {
@@ -2783,10 +2768,9 @@ function* iter_workspaces(manager: any): IterableIterator<[number, any]> {
     }
 }
 
-let default_isoverviewwindow_ws: any;
-let default_isoverviewwindow_ws_thumbnail: any;
-let default_init_appswitcher: any;
-let default_getwindowlist_windowswitcher: any;
+let default_isoverviewwindow_ws: typeof Workspace.prototype._isOverviewWindow | null;
+let default_isoverviewwindow_ws_thumbnail: typeof WorkspaceThumbnail.prototype._isOverviewWindow | null;
+let default_getwindowlist_windowswitcher: typeof WindowSwitcherPopup.prototype._getWindowList | null;
 
 /**
  * Decorates the default gnome-shell workspace/overview handling
@@ -2811,74 +2795,18 @@ function _show_skip_taskbar_windows(ext: Ext) {
     if (!default_isoverviewwindow_ws) {
         default_isoverviewwindow_ws = Workspace.prototype._isOverviewWindow;
         Workspace.prototype._isOverviewWindow = function (win: Meta.Window) {
-            return is_valid_minimize_to_tray(win, ext) || default_isoverviewwindow_ws(win);
+            return is_valid_minimize_to_tray(win, ext) || default_isoverviewwindow_ws!(win);
         };
     }
 
     // Handle the workspace thumbnail
     if (!default_isoverviewwindow_ws_thumbnail) {
         default_isoverviewwindow_ws_thumbnail = WorkspaceThumbnail.prototype._isOverviewWindow;
-        WorkspaceThumbnail.prototype._isOverviewWindow = function (win: any) {
+        WorkspaceThumbnail.prototype._isOverviewWindow = function (win) {
             const meta_win = win.get_meta_window();
-            return is_valid_minimize_to_tray(meta_win, ext) || default_isoverviewwindow_ws_thumbnail(win);
+            return is_valid_minimize_to_tray(meta_win, ext) || default_isoverviewwindow_ws_thumbnail!(win);
         };
     }
-
-    // let cfg = ext.conf;
-
-    // Handle switch-applications
-    // if (!default_init_appswitcher) {
-    //   default_init_appswitcher = AppSwitcher.prototype._init;
-    //   // Do not use the Shell.AppSystem apps
-    //   AppSwitcher.prototype._init = function (_apps: any, altTabPopup: any) {
-    //     // Simulate super._init(true);
-    //     SwitcherList.prototype._init.call(this, true);
-    //     this.icons = [];
-    //     this._arrows = [];
-
-    //     let windowTracker = Shell.WindowTracker.get_default();
-    //     let settings = new Gio.Settings({ schema_id: 'org.gnome.shell.app-switcher' });
-
-    //     let workspace = null;
-    //     if (settings.get_boolean('current-workspace-only')) {
-    //       let workspaceManager = global.workspace_manager;
-    //       workspace = workspaceManager.get_active_workspace();
-    //     }
-
-    //     let allWindows = global.display.get_tab_list(Meta.TabList.NORMAL_ALL, workspace);
-    //     // Remove duplicate app names after including skip task bar windows too
-    //     // E.g. Extensions instance plus when opening an extensions prefs window
-    //     // Or Android windows when alt-tabbing (depends on where switch apps is bound)
-    //     let allWindowsWithSkipTaskBar = allWindows.filter((w, i, a) => {
-    //       let app: any = windowTracker.get_window_app(w);
-    //       return (
-    //         i ===
-    //         a.findIndex(wi => {
-    //           let w_app: any = windowTracker.get_window_app(wi);
-    //           return app && w_app ? app.get_name() === w_app.get_name() : false;
-    //         })
-    //       );
-    //     });
-
-    //     // This block collects the windows associated to an app icon
-    //     for (let i = 0; i < allWindowsWithSkipTaskBar.length; i++) {
-    //       let meta_win = allWindowsWithSkipTaskBar[i];
-    //       let show_skiptb = !cfg.skiptaskbar_shall_hide(meta_win);
-    //       if (meta_win.is_skip_taskbar() && !show_skiptb) continue;
-    //       let appIcon = new AppIcon(windowTracker.get_window_app(meta_win));
-    //       appIcon.cachedWindows = allWindows.filter(
-    //         w => windowTracker.get_window_app(w) === appIcon.app
-    //       );
-    //       if (appIcon.cachedWindows.length > 0) this._addIcon(appIcon);
-    //     }
-
-    //     this._curApp = -1;
-    //     this._altTabPopup = altTabPopup;
-    //     this._mouseTimeOutId = 0;
-
-    //     this.connect('destroy', this._onDestroy.bind(this));
-    //   };
-    // }
 
     // Handle switch-windows
     if (!default_getwindowlist_windowswitcher) {
@@ -2928,11 +2856,6 @@ function _hide_skip_taskbar_windows() {
         default_isoverviewwindow_ws_thumbnail = null;
     }
 
-    if (default_init_appswitcher) {
-        // AppSwitcher.prototype._init = default_init_appswitcher;
-        default_init_appswitcher = null;
-    }
-
     if (default_getwindowlist_windowswitcher) {
         WindowSwitcherPopup.prototype._getWindowList = default_getwindowlist_windowswitcher;
         default_getwindowlist_windowswitcher = null;
@@ -2947,7 +2870,9 @@ function _hide_skip_taskbar_windows() {
  *
  * https://github.com/pop-os/shell/issues/1251
  */
-function is_valid_minimize_to_tray(meta_win: Meta.Window, ext: Ext) {
+function is_valid_minimize_to_tray(meta_win: Meta.Window | null, ext: Ext): boolean {
+    if (!meta_win) return false;
+
     const cfg = ext.conf;
     let valid_min_to_tray = false;
     switch (meta_win.window_type) {

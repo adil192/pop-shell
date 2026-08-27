@@ -16,7 +16,7 @@ import Clutter from 'gi://Clutter';
 import Mtk from 'gi://Mtk';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-export var window_tracker = Shell.WindowTracker.get_default();
+export const window_tracker = Shell.WindowTracker.get_default();
 
 /** Contains SourceID of a restack operation. Used to prevent multiple restacks. */
 let SCHEDULED_RESTACK: number | null = null;
@@ -66,11 +66,11 @@ export class ShellWindow {
 
     prev_rect: null | Mtk.Rectangle = null;
 
-    window_app: any;
+    window_app: Shell.App;
 
     private border_size = 0;
 
-    constructor(entity: Entity, window: Meta.Window, window_app: any, ext: Ext) {
+    constructor(entity: Entity, window: Meta.Window, window_app: Shell.App, ext: Ext) {
         this.window_app = window_app;
 
         this.entity = entity;
@@ -179,24 +179,27 @@ export class ShellWindow {
     }
 
     cmdline(): string | null {
-        let pid = this.meta.get_pid(),
-            out = null;
-        if (-1 === pid) return out;
+        const pid = this.meta.get_pid();
+        if (pid === -1) return null;
+
+
 
         const path = '/proc/' + pid + '/cmdline';
-        if (!utils.exists(path)) return out;
+        if (!utils.exists(path)) return null;
 
         const result = utils.read_to_string(path);
+        let out: string | null;
         if (result.kind == 1) {
             out = result.value.trim();
         } else {
+            out = null;
             log.error(`failed to fetch cmdline: ${result.value.format()}`);
         }
 
         return out;
     }
 
-    icon(_ext: Ext, size: number): any {
+    icon(_ext: Ext, size: number): Clutter.Actor {
         let icon = this.window_app.create_icon_texture(size);
 
         if (!icon) {
