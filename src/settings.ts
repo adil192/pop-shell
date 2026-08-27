@@ -21,7 +21,7 @@ function settings_new_schema(schema: string): Gio.Settings {
     const GioSSS = Gio.SettingsSchemaSource;
     const schemaDir = Gio.File.new_for_path(get_current_path()).get_child('schemas');
 
-    let schemaSource = schemaDir.query_exists(null)
+    const schemaSource = schemaDir.query_exists(null)
         ? GioSSS.new_from_directory(schemaDir.get_path()!, GioSSS.get_default(), false)
         : GioSSS.get_default();
 
@@ -98,8 +98,8 @@ export class ExtensionSettings {
     }
 
     hint_color_rgba() {
-        let rgba = this.ext.get_string(HINT_COLOR_RGBA);
-        let valid_color = new Gdk.RGBA().parse(rgba);
+        const rgba = this.ext.get_string(HINT_COLOR_RGBA);
+        const valid_color = new Gdk.RGBA().parse(rgba);
 
         if (!valid_color) {
             return DEFAULT_RGBA_COLOR;
@@ -200,7 +200,7 @@ export class ExtensionSettings {
     }
 
     set_hint_color_rgba(rgba: string) {
-        let valid_color = new Gdk.RGBA().parse(rgba);
+        const valid_color = new Gdk.RGBA().parse(rgba);
 
         if (valid_color) {
             this.ext.set_string(HINT_COLOR_RGBA, rgba);

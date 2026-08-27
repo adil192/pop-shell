@@ -31,7 +31,7 @@ interface SearchOption {
 export class Launcher extends search.Search {
     ext: Ext;
     options: Map<number, SearchOption> = new Map();
-    options_array: Array<SearchOption> = new Array();
+    options_array: Array<SearchOption> = [];
     windows: arena.Arena<ShellWindow> = new arena.Arena();
     service: null | service.LauncherService = null;
     append_id: null | number = null;
@@ -294,7 +294,7 @@ export class Launcher extends search.Search {
                 const pid = window.meta.get_pid();
                 if (pid !== -1) {
                     try {
-                        let f = Gio.File.new_for_path(`/proc/${pid}/cmdline`);
+                        const f = Gio.File.new_for_path(`/proc/${pid}/cmdline`);
                         const [, bytes] = f.load_contents(null);
                         const output: string = imports.byteArray.toString(bytes);
                         const cmd = output.split(' ').shift()?.split('/').pop();
@@ -338,7 +338,7 @@ export class Launcher extends search.Search {
 
         this.dialog.dialogLayout.x = mon_width / 2 - this.dialog.dialogLayout.width / 2;
 
-        let height = mon_work_area.height >= 900 ? mon_work_area.height / 2 : mon_work_area.height / 3.5;
+        const height = mon_work_area.height >= 900 ? mon_work_area.height / 2 : mon_work_area.height / 3.5;
         this.dialog.dialogLayout.y = height - this.dialog.dialogLayout.height / 2;
     }
 

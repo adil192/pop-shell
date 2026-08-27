@@ -34,11 +34,11 @@ export class Indicator {
         ext.button_gio_icon_auto_on = Gio.icon_new_for_string(`${path}/icons/pop-shell-auto-on-symbolic.svg`);
         ext.button_gio_icon_auto_off = Gio.icon_new_for_string(`${path}/icons/pop-shell-auto-off-symbolic.svg`);
 
-        let button_icon_auto_on = new St.Icon({
+        const button_icon_auto_on = new St.Icon({
             gicon: ext.button_gio_icon_auto_on,
             style_class: 'system-status-icon',
         });
-        let button_icon_auto_off = new St.Icon({
+        const button_icon_auto_off = new St.Icon({
             gicon: ext.button_gio_icon_auto_off,
             style_class: 'system-status-icon',
         });
@@ -51,7 +51,7 @@ export class Indicator {
 
         this.button.add_child(this.button.icon);
 
-        let bm = this.button.menu;
+        const bm = this.button.menu;
 
         this.toggle_tiled = tiled(ext);
 
@@ -106,10 +106,10 @@ function menu_separator(text: any): any {
 }
 
 function settings_button(menu: any): any {
-    let item = new PopupMenuItem(_('View All'));
+    const item = new PopupMenuItem(_('View All'));
     item.connect('activate', () => {
-        let path = GLib.find_program_in_path('pop-shell-shortcuts');
-        let [_success, _pid] = GLib.spawn_async(
+        const path = GLib.find_program_in_path('pop-shell-shortcuts');
+        const [_success, _pid] = GLib.spawn_async(
             null,
             path
                 ? [path]
@@ -128,17 +128,17 @@ function settings_button(menu: any): any {
 }
 
 function floating_window_exceptions(ext: Ext, menu: any): any {
-    let label = new St.Label({ text: 'Floating Window Exceptions' });
+    const label = new St.Label({ text: 'Floating Window Exceptions' });
     label.set_x_expand(true);
 
-    let icon = new St.Icon({ icon_name: 'go-next-symbolic', icon_size: 16 });
+    const icon = new St.Icon({ icon_name: 'go-next-symbolic', icon_size: 16 });
 
-    let widget = new St.BoxLayout({ vertical: false });
+    const widget = new St.BoxLayout({ vertical: false });
     widget.add_child(label);
     widget.add_child(icon);
     widget.set_x_expand(true);
 
-    let base = new PopupBaseMenuItem();
+    const base = new PopupBaseMenuItem();
     base.add_child(widget);
     base.connect('activate', () => {
         ext.exception_dialog();
@@ -153,14 +153,14 @@ function floating_window_exceptions(ext: Ext, menu: any): any {
 }
 
 function shortcuts(menu: any): any {
-    let layout_manager = new Clutter.GridLayout({ orientation: Clutter.Orientation.HORIZONTAL });
-    let widget = new St.Widget({ layout_manager, x_expand: true });
+    const layout_manager = new Clutter.GridLayout({ orientation: Clutter.Orientation.HORIZONTAL });
+    const widget = new St.Widget({ layout_manager, x_expand: true });
 
-    let item = new PopupBaseMenuItem();
+    const item = new PopupBaseMenuItem();
     item.add_child(widget);
     item.connect('activate', () => {
-        let path = GLib.find_program_in_path('pop-shell-shortcuts');
-        let [_success, _pid] = GLib.spawn_async(
+        const path = GLib.find_program_in_path('pop-shell-shortcuts');
+        const [_success, _pid] = GLib.spawn_async(
             null,
             path
                 ? [path]
@@ -178,7 +178,7 @@ function shortcuts(menu: any): any {
     }
 
     function create_shortcut_label(text: string): any {
-        let label = create_label(text);
+        const label = create_label(text);
         label.set_x_align(Clutter.ActorAlign.END);
         return label;
     }
@@ -187,7 +187,7 @@ function shortcuts(menu: any): any {
     layout_manager.set_column_spacing(30);
     layout_manager.attach(create_label(_('Shortcuts')), 0, 0, 2, 1);
 
-    let launcher_shortcut = _('Super + /');
+    const launcher_shortcut = _('Super + /');
     // const cosmic_settings = Settings.settings_new_id(
     //   'org.gnome.shell.extensions.pop-cosmic'
     // );
@@ -202,10 +202,10 @@ function shortcuts(menu: any): any {
         [_('Navigate Windows'), _('Super + Arrow Keys')],
         [_('Toggle Tiling'), _('Super + Y')],
     ].forEach((section, idx) => {
-        let key = create_label(section[0]);
+        const key = create_label(section[0]);
         key.get_clutter_text().set_margin_left(12);
 
-        let val = create_shortcut_label(section[1]);
+        const val = create_shortcut_label(section[1]);
 
         layout_manager.attach(key, 0, idx + 1, 1, 1);
         layout_manager.attach(val, 1, idx + 1, 1, 1);
@@ -312,7 +312,7 @@ function show_title(ext: Ext): any {
 }
 
 function toggle(desc: string, active: boolean, connect: (toggle: any, state: boolean) => void): any {
-    let toggle = new PopupSwitchMenuItem(desc, active);
+    const toggle = new PopupSwitchMenuItem(desc, active);
 
     toggle.label.set_y_align(Clutter.ActorAlign.CENTER);
 
@@ -325,7 +325,7 @@ function toggle(desc: string, active: boolean, connect: (toggle: any, state: boo
 }
 
 function tiled(ext: Ext): any {
-    let t = toggle(_('Tile Windows'), null != ext.auto_tiler, (_, shouldTile) => {
+    const t = toggle(_('Tile Windows'), null != ext.auto_tiler, (_, shouldTile) => {
         if (shouldTile) {
             ext.auto_tile_on();
         } else {
@@ -336,10 +336,10 @@ function tiled(ext: Ext): any {
 }
 
 function color_selector(ext: Ext, menu: any) {
-    let color_selector_item = new PopupMenuItem('Active Hint Color');
-    let color_button = new St.Button();
-    let settings = ext.settings;
-    let selected_color = settings.hint_color_rgba();
+    const color_selector_item = new PopupMenuItem('Active Hint Color');
+    const color_button = new St.Button();
+    const settings = ext.settings;
+    const selected_color = settings.hint_color_rgba();
 
     // TODO, find a way to expand the button text, :)
     color_button.label = '           '; // blank for now
@@ -347,7 +347,7 @@ function color_selector(ext: Ext, menu: any) {
 
     settings.ext.connect('changed', (_, key) => {
         if (key === 'hint-color-rgba') {
-            let color_value = settings.hint_color_rgba();
+            const color_value = settings.hint_color_rgba();
             color_button.set_style(`background-color: ${color_value}; border: 2px solid lightgray; border-radius: 2px`);
         }
     });
@@ -360,8 +360,8 @@ function color_selector(ext: Ext, menu: any) {
 
     color_selector_item.add_child(color_button);
     color_button.connect('button-press-event', () => {
-        let path = get_current_path() + '/color_dialog/main.js';
-        let resp = GLib.spawn_command_line_async(`gjs --module ${path}`);
+        const path = get_current_path() + '/color_dialog/main.js';
+        const resp = GLib.spawn_command_line_async(`gjs --module ${path}`);
         if (!resp) {
             return null;
         }

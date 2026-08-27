@@ -92,7 +92,7 @@ export class LauncherService {
         this.send({ Select: id });
     }
 
-    send(object: Object) {
+    send(object: object) {
         const message = JSON.stringify(object);
         try {
             this.service.stdin.write_all(message + '\n', null);

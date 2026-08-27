@@ -26,7 +26,7 @@ interface AppWidgets {
 export default class PopShellPreferences extends ExtensionPreferences {
     getPreferencesWidget() {
         globalThis.popShellExtension = this;
-        let dialog = settings_dialog_new();
+        const dialog = settings_dialog_new();
         dialog.show();
         log.debug(JSON.stringify(dialog));
         return dialog;
@@ -34,9 +34,9 @@ export default class PopShellPreferences extends ExtensionPreferences {
 }
 
 function settings_dialog_new(): Gtk.Grid {
-    let [app, grid] = settings_dialog_view();
+    const [app, grid] = settings_dialog_view();
 
-    let ext = new settings.ExtensionSettings();
+    const ext = new settings.ExtensionSettings();
 
     app.window_titles.set_active(ext.show_title());
     app.window_titles.connect('state-set', (_widget, state) => {
@@ -58,7 +58,7 @@ function settings_dialog_new(): Gtk.Grid {
 
     app.outer_gap.set_text(String(ext.gap_outer()));
     app.outer_gap.connect('activate', (widget) => {
-        let parsed = parseInt(widget.get_text().trim());
+        const parsed = parseInt(widget.get_text().trim());
         if (!isNaN(parsed)) {
             ext.set_gap_outer(parsed);
             Settings.sync();
@@ -67,7 +67,7 @@ function settings_dialog_new(): Gtk.Grid {
 
     app.inner_gap.set_text(String(ext.gap_inner()));
     app.inner_gap.connect('activate', (widget) => {
-        let parsed = parseInt(widget.get_text().trim());
+        const parsed = parseInt(widget.get_text().trim());
         if (!isNaN(parsed)) {
             ext.set_gap_inner(parsed);
             Settings.sync();
@@ -76,7 +76,7 @@ function settings_dialog_new(): Gtk.Grid {
 
     app.log_level.set_active(ext.log_level());
     app.log_level.connect('changed', () => {
-        let active_id = parseInt(app.log_level.get_active_id()!);
+        const active_id = parseInt(app.log_level.get_active_id()!);
         ext.set_log_level(active_id);
     });
 
@@ -94,7 +94,7 @@ function settings_dialog_new(): Gtk.Grid {
 
     app.mouse_cursor_focus_position.set_active(ext.mouse_cursor_focus_location());
     app.mouse_cursor_focus_position.connect('changed', () => {
-        let active_id = parseInt(app.mouse_cursor_focus_position.get_active_id()!);
+        const active_id = parseInt(app.mouse_cursor_focus_position.get_active_id()!);
         ext.set_mouse_cursor_focus_location(active_id);
     });
 
@@ -112,7 +112,7 @@ function settings_dialog_new(): Gtk.Grid {
 
     app.max_window_width.set_text(String(ext.max_window_width()));
     app.max_window_width.connect('activate', (widget) => {
-        let parsed = parseInt(widget.get_text().trim());
+        const parsed = parseInt(widget.get_text().trim());
         if (!isNaN(parsed)) {
             ext.set_max_window_width(parsed);
             Settings.sync();
@@ -218,23 +218,23 @@ function settings_dialog_view(): [AppWidgets, Gtk.Grid] {
 }
 
 function gaps_section(grid: Gtk.Grid, top: number): [Gtk.Entry, Gtk.Entry] {
-    let outer_label = new Gtk.Label({
+    const outer_label = new Gtk.Label({
         label: 'Outer',
         xalign: 0.0,
         margin_start: 24,
     });
 
-    let outer_entry = number_entry();
+    const outer_entry = number_entry();
 
-    let inner_label = new Gtk.Label({
+    const inner_label = new Gtk.Label({
         label: 'Inner',
         xalign: 0.0,
         margin_start: 24,
     });
 
-    let inner_entry = number_entry();
+    const inner_entry = number_entry();
 
-    let section_label = new Gtk.Label({
+    const section_label = new Gtk.Label({
         label: 'Gaps (in pixels)',
         xalign: 0.0,
     });
@@ -252,15 +252,15 @@ function number_entry(): Gtk.Entry {
     return new Gtk.Entry({ input_purpose: Gtk.InputPurpose.NUMBER });
 }
 
-function build_combo<Enum extends { [name: string]: Object }>(grid: Gtk.Grid, top_index: number, iter_enum: Enum, label: string): Gtk.ComboBoxText {
-    let label_ = new Gtk.Label({
+function build_combo<Enum extends { [name: string]: object }>(grid: Gtk.Grid, top_index: number, iter_enum: Enum, label: string): Gtk.ComboBoxText {
+    const label_ = new Gtk.Label({
         label: label,
         halign: Gtk.Align.START,
     });
 
     grid.attach(label_, 0, top_index, 1, 1);
 
-    let combo = new Gtk.ComboBoxText();
+    const combo = new Gtk.ComboBoxText();
 
     for (const [index, key] of Object.keys(iter_enum).entries()) {
         if (typeof iter_enum[key] == 'string') {

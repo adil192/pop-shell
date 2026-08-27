@@ -52,25 +52,25 @@ interface View {
 }
 
 function exceptions_button(): any {
-    let title = Gtk.Label.new('System Exceptions');
+    const title = Gtk.Label.new('System Exceptions');
     title.set_xalign(0);
 
-    let description = Gtk.Label.new('Updated based on validated user reports.');
+    const description = Gtk.Label.new('Updated based on validated user reports.');
     description.set_xalign(0);
     description.get_style_context().add_class('dim-label');
 
-    let icon = Gtk.Image.new_from_icon_name('go-next-symbolic', Gtk.IconSize.BUTTON);
+    const icon = Gtk.Image.new_from_icon_name('go-next-symbolic', Gtk.IconSize.BUTTON);
     icon.set_hexpand(true);
     icon.set_halign(Gtk.Align.END);
 
-    let layout = Gtk.Grid.new();
+    const layout = Gtk.Grid.new();
     layout.set_row_spacing(4);
     layout.set_border_width(12);
     layout.attach(title, 0, 0, 1, 1);
     layout.attach(description, 0, 1, 1, 1);
     layout.attach(icon, 1, 0, 1, 2);
 
-    let button = Gtk.Button.new();
+    const button = Gtk.Button.new();
     button.relief = Gtk.ReliefStyle.NONE;
     button.add(layout);
 
@@ -85,12 +85,12 @@ export class MainView implements View {
     private list: any;
 
     constructor() {
-        let select = Gtk.Button.new_with_label('Select');
+        const select = Gtk.Button.new_with_label('Select');
         select.set_halign(Gtk.Align.CENTER);
         select.connect('clicked', () => this.callback({ tag: 0 }));
         select.set_margin_bottom(12);
 
-        let exceptions = exceptions_button();
+        const exceptions = exceptions_button();
         exceptions.connect('clicked', () => this.callback({ tag: 1, view: ViewNum.Exceptions }));
 
         this.list = Gtk.ListBox.new();
@@ -98,16 +98,16 @@ export class MainView implements View {
         this.list.set_header_func(list_header_func);
         this.list.add(exceptions);
 
-        let scroller = new Gtk.ScrolledWindow();
+        const scroller = new Gtk.ScrolledWindow();
         scroller.hscrollbar_policy = Gtk.PolicyType.NEVER;
         scroller.set_propagate_natural_width(true);
         scroller.set_propagate_natural_height(true);
         scroller.add(this.list);
 
-        let list_frame = Gtk.Frame.new(null);
+        const list_frame = Gtk.Frame.new(null);
         list_frame.add(scroller);
 
-        let desc = new Gtk.Label({
+        const desc = new Gtk.Label({
             label: 'Add exceptions by selecting currently running applications and windows.',
         });
         desc.set_line_wrap(true);
@@ -123,15 +123,15 @@ export class MainView implements View {
     }
 
     add_rule(wmclass: string | undefined, wmtitle: string | undefined) {
-        let label = Gtk.Label.new(wmtitle === undefined ? wmclass ?? null : `${wmclass} / ${wmtitle}`);
+        const label = Gtk.Label.new(wmtitle === undefined ? wmclass ?? null : `${wmclass} / ${wmtitle}`);
         label.set_xalign(0);
         label.set_hexpand(true);
         label.set_ellipsize(Pango.EllipsizeMode.END);
 
-        let button = Gtk.Button.new_from_icon_name('edit-delete', Gtk.IconSize.BUTTON);
+        const button = Gtk.Button.new_from_icon_name('edit-delete', Gtk.IconSize.BUTTON);
         button.set_valign(Gtk.Align.CENTER);
 
-        let widget = Gtk.Box.new(Gtk.Orientation.HORIZONTAL, 24);
+        const widget = Gtk.Box.new(Gtk.Orientation.HORIZONTAL, 24);
         widget.add(label);
         widget.add(button);
         widget.set_border_width(12);
@@ -154,22 +154,22 @@ export class ExceptionsView implements View {
     exceptions: any = Gtk.ListBox.new();
 
     constructor() {
-        let desc_title = Gtk.Label.new('<b>System Exceptions</b>');
+        const desc_title = Gtk.Label.new('<b>System Exceptions</b>');
         desc_title.set_use_markup(true);
         desc_title.set_xalign(0);
 
-        let desc_desc = Gtk.Label.new('Updated based on validated user reports.');
+        const desc_desc = Gtk.Label.new('Updated based on validated user reports.');
         desc_desc.set_xalign(0);
         desc_desc.get_style_context().add_class('dim-label');
         desc_desc.set_margin_bottom(6);
 
-        let scroller = new Gtk.ScrolledWindow();
+        const scroller = new Gtk.ScrolledWindow();
         scroller.hscrollbar_policy = Gtk.PolicyType.NEVER;
         scroller.set_propagate_natural_width(true);
         scroller.set_propagate_natural_height(true);
         scroller.add(this.exceptions);
 
-        let exceptions_frame = Gtk.Frame.new(null);
+        const exceptions_frame = Gtk.Frame.new(null);
         exceptions_frame.add(scroller);
 
         this.exceptions.set_selection_mode(Gtk.SelectionMode.NONE);
@@ -182,19 +182,19 @@ export class ExceptionsView implements View {
     }
 
     add_rule(wmclass: string | undefined, wmtitle: string | undefined, enabled: boolean) {
-        let label = Gtk.Label.new(wmtitle === undefined ? wmclass ?? null : `${wmclass} / ${wmtitle}`);
+        const label = Gtk.Label.new(wmtitle === undefined ? wmclass ?? null : `${wmclass} / ${wmtitle}`);
         label.set_xalign(0);
         label.set_hexpand(true);
         label.set_ellipsize(Pango.EllipsizeMode.END);
 
-        let button = Gtk.Switch.new();
+        const button = Gtk.Switch.new();
         button.set_valign(Gtk.Align.CENTER);
         button.set_state(enabled);
         button.connect('notify::state', () => {
             this.callback({ tag: 2, wmclass, wmtitle, enable: button.get_state() });
         });
 
-        let widget = Gtk.Box.new(Gtk.Orientation.HORIZONTAL, 24);
+        const widget = Gtk.Box.new(Gtk.Orientation.HORIZONTAL, 24);
         widget.add(label);
         widget.add(button);
         widget.show_all();
@@ -217,12 +217,12 @@ class App {
         this.stack.add(this.main_view.widget);
         this.stack.add(this.exceptions_view.widget);
 
-        let back = Gtk.Button.new_from_icon_name('go-previous-symbolic', Gtk.IconSize.BUTTON);
+        const back = Gtk.Button.new_from_icon_name('go-previous-symbolic', Gtk.IconSize.BUTTON);
 
         const TITLE = 'Floating Window Exceptions';
 
-        let win = new Gtk.Dialog({ use_header_bar: 1 });
-        let headerbar = win.get_header_bar();
+        const win = new Gtk.Dialog({ use_header_bar: 1 });
+        const headerbar = win.get_header_bar();
         headerbar.set_show_close_button(true);
         headerbar.set_title(TITLE);
         headerbar.pack_start(back);
@@ -241,20 +241,20 @@ class App {
         this.config.reload();
 
         for (const value of config.DEFAULT_FLOAT_RULES.values()) {
-            let wmtitle = value.title ?? undefined;
-            let wmclass = value.class ?? undefined;
+            const wmtitle = value.title ?? undefined;
+            const wmclass = value.class ?? undefined;
 
-            let disabled = this.config.rule_disabled({ class: wmclass, title: wmtitle });
+            const disabled = this.config.rule_disabled({ class: wmclass, title: wmtitle });
             this.exceptions_view.add_rule(wmclass, wmtitle, !disabled);
         }
 
         for (const value of Array.from<any>(this.config.float)) {
-            let wmtitle = value.title ?? undefined;
-            let wmclass = value.class ?? undefined;
+            const wmtitle = value.title ?? undefined;
+            const wmclass = value.class ?? undefined;
             if (!value.disabled) this.main_view.add_rule(wmclass, wmtitle);
         }
 
-        let event_handler = (event: Event) => {
+        const event_handler = (event: Event) => {
             switch (event.tag) {
                 // SelectWindow
                 case 0:

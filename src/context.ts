@@ -26,7 +26,7 @@ export function addContext(menu: PopupMenu.PopupMenu, name: string, activate: ()
 }
 
 function appendMenuItem(menu: any, label: string) {
-    let item = new PopupMenu.PopupMenuItem(label);
+    const item = new PopupMenu.PopupMenuItem(label);
     menu.addMenuItem(item);
     return item;
 }

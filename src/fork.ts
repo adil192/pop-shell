@@ -129,7 +129,7 @@ export class Fork {
     replace_window(ext: Ext, a: ShellWindow, b: ShellWindow): null | (() => void) {
         let closure = null;
 
-        let check_right = () => {
+        const check_right = () => {
             if (this.right) {
                 const inner = this.right.inner;
                 if (inner.kind === 2) {
@@ -168,7 +168,7 @@ export class Fork {
                 break;
             case 3:
                 const inner_s = this.left.inner as node.NodeStack;
-                let idx = node.stack_find(inner_s, a.entity);
+                const idx = node.stack_find(inner_s, a.entity);
                 if (idx !== null) {
                     const id = idx;
                     closure = () => {
@@ -212,7 +212,7 @@ export class Fork {
     measure(tiler: Forest, ext: Ext, area: Mtk.Rectangle, record: (win: Entity, parent: Entity, area: Mtk.Rectangle) => void) {
         let ratio = null;
 
-        let manually_moved = ext.grab_op !== null || ext.tiler.resizing_window;
+        const manually_moved = ext.grab_op !== null || ext.tiler.resizing_window;
 
         if (!this.is_toplevel) {
             if (this.orientation_changed) {
@@ -238,7 +238,7 @@ export class Fork {
         if (this.right) {
             const [l, p, startpos] = this.is_horizontal() ? [WIDTH, XPOS, this.area.x] : [HEIGHT, YPOS, this.area.y];
 
-            let region = this.area.copy();
+            const region = this.area.copy();
 
             const half = this.area[l] / 2;
 
@@ -272,7 +272,7 @@ export class Fork {
             this.workspace = workspace;
             this.on_primary_display = primary;
 
-            let blocked = new Array();
+            const blocked = [];
 
             forest.toplevel.set(forest.string_reps.get(this.entity) as string, [this.entity, [monitor, workspace]]);
 
@@ -286,7 +286,7 @@ export class Fork {
                         cfork.on_primary_display = primary;
                         break;
                     case 2:
-                        let window = ext.windows.get(child.inner.entity);
+                        const window = ext.windows.get(child.inner.entity);
                         if (window) {
                             ext.size_signals_block(window);
                             window.reassignment = false;
@@ -298,12 +298,12 @@ export class Fork {
                         break;
                     case 3:
                         for (const entity of child.inner.entities) {
-                            let stack = ext.auto_tiler.forest.stacks.get(child.inner.idx);
+                            const stack = ext.auto_tiler.forest.stacks.get(child.inner.idx);
                             if (stack) {
                                 stack.workspace = workspace;
                             }
 
-                            let window = ext.windows.get(entity);
+                            const window = ext.windows.get(entity);
 
                             if (window) {
                                 ext.size_signals_block(window);

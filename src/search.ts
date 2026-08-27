@@ -356,7 +356,7 @@ export class Search {
             (shortcut as any).hide();
         }
 
-        let initial_cursor = Lib.cursor_rect();
+        const initial_cursor = Lib.cursor_rect();
 
         widget.connect('clicked', () => this.activate_id(id));
         widget.connect('notify::hover', () => {

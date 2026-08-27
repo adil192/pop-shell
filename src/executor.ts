@@ -8,7 +8,7 @@ export interface Executor<T> {
 /** Glib-based event executor */
 export class GLibExecutor<T> implements Executor<T> {
     #event_loop: SignalID | null = null;
-    #events: Array<T> = new Array();
+    #events: Array<T> = [];
 
     /** Creates an idle_add signal that exists only for as long as there are events to process.
      *
@@ -22,7 +22,7 @@ export class GLibExecutor<T> implements Executor<T> {
         if (this.#event_loop) return;
 
         this.#event_loop = GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
-            let event = this.#events.pop();
+            const event = this.#events.pop();
             if (event) system.run(event);
 
             if (this.#events.length === 0) {
@@ -71,7 +71,7 @@ export class OnceExecutor<X, T extends Iterable<X>> {
 }
 
 export class ChannelExecutor<X> {
-    #channel: Array<X> = new Array();
+    #channel: Array<X> = [];
 
     #signal: null | number = null;
 
