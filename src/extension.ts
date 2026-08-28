@@ -940,6 +940,7 @@ export class Ext extends Ecs.System<ExtEvent> {
     }
 
     on_tile_detach(win: Entity) {
+        if (!this.settings.untile_reset_windows()) return;
         this.windows.with(win, (window) => {
             if (window.prev_rect && !window.ignore_detach) {
                 this.register(Events.window_move(this, window, window.prev_rect));

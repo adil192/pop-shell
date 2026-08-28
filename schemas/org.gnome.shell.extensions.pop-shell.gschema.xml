@@ -74,6 +74,11 @@
             <summary>Tile launched windows by default</summary>
         </key>
 
+        <key type="b" name="untile-reset-windows">
+            <default>true</default>
+            <summary>Reset windows to their previous position if tiling is disabled.</summary>
+        </key>
+
         <key type="b" name="stacking-with-mouse">
             <default>true</default>
             <summary>Allow for stacking windows as a result of dragging a window with mouse</summary>

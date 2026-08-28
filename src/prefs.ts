@@ -21,6 +21,7 @@ interface AppWidgets {
     mouse_cursor_focus_position: Gtk.ComboBoxText;
     log_level: Gtk.ComboBoxText;
     max_window_width: Gtk.Entry;
+    untile_reset_windows: Gtk.Switch;
 }
 
 export default class PopShellPreferences extends ExtensionPreferences {
@@ -89,6 +90,12 @@ function settings_dialog_new(): Gtk.Grid {
     app.mouse_cursor_follows_active_window.set_active(ext.mouse_cursor_follows_active_window());
     app.mouse_cursor_follows_active_window.connect('state-set', (_widget, state) => {
         ext.set_mouse_cursor_follows_active_window(state);
+        Settings.sync();
+    });
+
+    app.untile_reset_windows.set_active(ext.untile_reset_windows());
+    app.untile_reset_windows.connect('state-set', (_widget, state) => {
+        ext.set_untile_reset_windows(state);
         Settings.sync();
     });
 
@@ -173,7 +180,12 @@ function settings_dialog_view(): [AppWidgets, Gtk.Grid] {
         xalign: 0.0,
     });
 
-    const [inner_gap, outer_gap] = gaps_section(grid, 9);
+    const untile_reset_windows_label = new Gtk.Label({
+        label: 'Reset windows to their previous position if tiling is disabled',
+        xalign: 0.0,
+    });
+
+    const [inner_gap, outer_gap] = gaps_section(grid, 10);
 
     const settings: AppWidgets = {
         inner_gap,
@@ -185,8 +197,9 @@ function settings_dialog_view(): [AppWidgets, Gtk.Grid] {
         window_titles: new Gtk.Switch({ halign: Gtk.Align.END }),
         show_skip_taskbar: new Gtk.Switch({ halign: Gtk.Align.END }),
         mouse_cursor_follows_active_window: new Gtk.Switch({ halign: Gtk.Align.END }),
-        mouse_cursor_focus_position: build_combo(grid, 7, focus.FocusPosition, 'Mouse Cursor Focus Position'),
-        log_level: build_combo(grid, 8, log.LOG_LEVELS, 'Log Level'),
+        untile_reset_windows: new Gtk.Switch({ halign: Gtk.Align.END }),
+        mouse_cursor_focus_position: build_combo(grid, 8, focus.FocusPosition, 'Mouse Cursor Focus Position'),
+        log_level: build_combo(grid, 9, log.LOG_LEVELS, 'Log Level'),
         max_window_width: number_entry(),
     };
 
@@ -211,8 +224,11 @@ function settings_dialog_view(): [AppWidgets, Gtk.Grid] {
     grid.attach(mouse_cursor_follows_active_window_label, 0, 6, 1, 1);
     grid.attach(settings.mouse_cursor_follows_active_window, 1, 6, 1, 1);
 
-    grid.attach(max_window_width_label, 0, 12, 1, 1);
-    grid.attach(settings.max_window_width, 1, 12, 1, 1);
+    grid.attach(untile_reset_windows_label, 0, 7, 1, 1);
+    grid.attach(settings.untile_reset_windows, 1, 7, 1, 1);
+
+    grid.attach(max_window_width_label, 0, 13, 1, 1);
+    grid.attach(settings.max_window_width, 1, 13, 1, 1);
 
     return [settings, grid];
 }

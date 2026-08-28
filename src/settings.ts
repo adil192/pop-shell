@@ -49,6 +49,7 @@ const SHOW_TITLE = 'show-title';
 const SMART_GAPS = 'smart-gaps';
 const SNAP_TO_GRID = 'snap-to-grid';
 const TILE_BY_DEFAULT = 'tile-by-default';
+const UNTILE_RESET_WINDOWS = 'untile-reset-windows';
 const HINT_COLOR_RGBA = 'hint-color-rgba';
 const DEFAULT_RGBA_COLOR = 'rgba(251, 184, 108, 1)'; //pop-orange
 const LOG_LEVEL = 'log-level';
@@ -141,6 +142,10 @@ export class ExtensionSettings {
         return this.ext.get_boolean(TILE_BY_DEFAULT);
     }
 
+    untile_reset_windows(): boolean {
+        return this.ext.get_boolean(UNTILE_RESET_WINDOWS);
+    }
+
     workspaces_only_on_primary(): boolean {
         return this.mutter ? this.mutter.get_boolean('workspaces-only-on-primary') : false;
     }
@@ -227,6 +232,10 @@ export class ExtensionSettings {
 
     set_tile_by_default(set: boolean) {
         this.ext.set_boolean(TILE_BY_DEFAULT, set);
+    }
+    
+    set_untile_reset_windows(set: boolean) {
+        this.ext.set_boolean(UNTILE_RESET_WINDOWS, set);
     }
 
     set_log_level(set: number) {
