@@ -950,8 +950,10 @@ export class Ext extends Ecs.System<ExtEvent> {
     }
 
     show_border_on_focused() {
-        this.hide_all_borders();
         const focus = this.focus_window();
+        for (const win of this.windows.values()) {
+            if (win != focus) win.hide_border();
+        }
         if (focus) focus.show_border();
     }
 
@@ -2165,7 +2167,6 @@ export class Ext extends Ecs.System<ExtEvent> {
 
     auto_tile_off() {
         this.settings.set_edge_tiling(true);
-        this.hide_all_borders();
 
         if (this.auto_tiler) {
             this.unregister_storage(this.auto_tiler.attached);
@@ -2185,7 +2186,6 @@ export class Ext extends Ecs.System<ExtEvent> {
 
     auto_tile_on() {
         this.settings.set_edge_tiling(false);
-        this.hide_all_borders();
 
         if (indicator) indicator.toggle_tiled.setToggleState(true);
 

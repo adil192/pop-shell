@@ -297,8 +297,6 @@ export class ShellWindow {
             return;
         }
 
-        this.hide_border();
-
         const max_width = ext.settings.max_window_width();
         if (max_width > 0 && rect.width > max_width) {
             rect.x += (rect.width - max_width) / 2;
@@ -321,6 +319,8 @@ export class ShellWindow {
             if (meta.appears_focused) {
                 this.update_border_layout();
                 ext.show_border_on_focused();
+            } else {
+                this.hide_border();
             }
         }
     }
