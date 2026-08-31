@@ -134,15 +134,18 @@ const TabButton = GObject.registerClass(
         }
 
         set_active(style: TabActive, settings: ExtensionSettings) {
-            const hint_color_rgba = settings.hint_color_rgba();
             switch (style) {
                 case TabActive.active:
+                    const hint_color_rgba = settings.hint_color_rgba();
                     this._styles.class = 'pop-shell-tab pop-shell-tab-active';
                     this._styles.bg = hint_color_rgba;
                     this._styles.fg = utils.is_dark(hint_color_rgba) ? 'white' : 'black';
                     this._styles.border_color = '#999999';
                     break;
                 case TabActive.inactive:
+                    // Don't dismiss urgent state
+                    if (this._styles.class.includes('pop-shell-tab-urgent')) return;
+
                     this._styles.class = 'pop-shell-tab pop-shell-tab-inactive';
                     this._styles.bg = undefined;
                     this._styles.fg = undefined;
