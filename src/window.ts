@@ -93,7 +93,7 @@ export class ShellWindow {
         this.restack();
         this.update_border_layout();
 
-        if (this.meta.get_compositor_private<Clutter.Actor>()?.get_stage()) this.on_style_changed();
+        if (this.meta.get_compositor_private<Clutter.Actor | null>()?.get_stage()) this.on_style_changed();
     }
 
     activate(move_mouse: boolean = true): void {
@@ -101,7 +101,7 @@ export class ShellWindow {
     }
 
     actor_exists(): boolean {
-        return !this.destroying && this.meta.get_compositor_private<Clutter.Actor>() !== null;
+        return !this.destroying && this.meta.get_compositor_private<Clutter.Actor | null>() !== null;
     }
 
     private bind_window_events() {
@@ -304,7 +304,7 @@ export class ShellWindow {
         }
 
         const meta = this.meta;
-        const actor = meta.get_compositor_private<Clutter.Actor>();
+        const actor = meta.get_compositor_private<Clutter.Actor | null>();
 
         if (actor) {
             if (this.is_maximized()) {
@@ -454,7 +454,7 @@ export class ShellWindow {
             }
 
             const border = this.border;
-            const actor = this.meta.get_compositor_private<Clutter.Actor>();
+            const actor = this.meta.get_compositor_private<Clutter.Actor | null>();
             const win_group = global.window_group;
 
             if (actor && border && win_group) {
@@ -481,9 +481,9 @@ export class ShellWindow {
                 // Honor transient windows
                 for (const window of this.ext.windows.values()) {
                     const parent = window.meta.get_transient_for();
-                    const window_actor = window.meta.get_compositor_private<Clutter.Actor>();
+                    const window_actor = window.meta.get_compositor_private<Clutter.Actor | null>();
                     if (!parent || !window_actor) continue;
-                    const parent_actor = parent.get_compositor_private<Clutter.Actor>();
+                    const parent_actor = parent.get_compositor_private<Clutter.Actor | null>();
                     if (!parent_actor && parent_actor !== actor) continue;
                     win_group.set_child_below_sibling(border, window_actor);
                 }
@@ -608,7 +608,7 @@ export class ShellWindow {
 export function activate(ext: Ext, move_mouse: boolean, win: Meta.Window) {
     try {
         // Return if window was destroyed.
-        if (!win.get_compositor_private<Clutter.Actor>()) return;
+        if (!win.get_compositor_private<Clutter.Actor | null>()) return;
 
         // Return if window is being destroyed.
         if (ext.get_window(win)?.destroying) return;

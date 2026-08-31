@@ -89,8 +89,8 @@ export class AutoTiler {
         a_win.stack = b_stack;
         b_win.stack = a_stack;
 
-        a_win.meta.get_compositor_private<Clutter.Actor>()?.show();
-        b_win.meta.get_compositor_private<Clutter.Actor>()?.show();
+        a_win.meta.get_compositor_private<Clutter.Actor | null>()?.show();
+        b_win.meta.get_compositor_private<Clutter.Actor | null>()?.show();
 
         this.tile(ext, a_fork, a_fork.area);
         this.tile(ext, b_fork, b_fork.area);

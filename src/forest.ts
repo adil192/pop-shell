@@ -927,7 +927,7 @@ function move_window(ext: Ext, window: ShellWindow, rect: Mtk.Rectangle, on_comp
         return;
     }
 
-    const actor = window.meta.get_compositor_private<Clutter.Actor>();
+    const actor = window.meta.get_compositor_private<Clutter.Actor | null>();
 
     if (!actor) {
         log.warn(`Window(${window.entity}) does not have an actor, and therefore cannot be moved`);
