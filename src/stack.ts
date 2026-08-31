@@ -244,6 +244,16 @@ export class Stack {
         this.tabs.push(tab);
         this.watch_signals(comp, id, window);
         this.widgets.tabs.add_child(button);
+
+        const actor = window.meta.get_compositor_private<Clutter.Actor>();
+        actor.remove_all_transitions();
+        if (active) {
+            actor.opacity = 255;
+            actor.show();
+        } else {
+            actor.opacity = 0;
+            actor.hide();
+        }
     }
 
     /** Activates a tab based on the previously active entry */
@@ -266,7 +276,7 @@ export class Stack {
         }
     }
 
-    /** Activates the tab of this entity */
+    /** Activates the tab of this entity, and hides other windows. */
     activate(entity: Entity) {
         const permitted = this.permitted_to_show();
 
@@ -286,34 +296,53 @@ export class Stack {
 
         let id = 0;
 
-        for (const [idx, component] of this.tabs.entries()) {
+        for (const [idx, tab] of this.tabs.entries()) {
             let tab_active: TabActive;
 
-            this.window_exec(id, component.entity, (window) => {
+            this.window_exec(id, tab.entity, (window) => {
                 const actor = window.meta.get_compositor_private<Clutter.Actor>();
 
-                if (Ecs.entity_eq(entity, component.entity)) {
+                if (Ecs.entity_eq(entity, tab.entity)) {
                     this.active_id = id;
-                    component.active = true;
+                    tab.active = true;
                     tab_active = TabActive.active;
-                    if (actor) actor.show();
+                    if (actor) this.fade_in(actor);
                 } else {
-                    component.active = false;
+                    tab.active = false;
                     tab_active = TabActive.inactive;
-                    if (actor) actor.hide();
+                    if (actor) this.fade_out(actor);
                 }
 
-                const button = this.buttons.get(component.button);
+                const button = this.buttons.get(tab.button);
                 if (button) {
                     button.set_active(tab_active, this.ext.settings);
-                    button.set_border_radius(this.get_tab_border_radius(idx, component.active));
+                    button.set_border_radius(this.get_tab_border_radius(idx, tab.active));
                 }
             });
 
             id += 1;
         }
+    }
 
-        this.reset_visibility(permitted);
+    private fade_in(actor: Clutter.Actor) {
+        if (actor.visible && actor.opacity >= 255) return;
+        actor.remove_all_transitions();
+        actor.show();
+        actor.ease({
+            opacity: 255,
+            duration: 150,
+            mode: Clutter.AnimationMode.EASE_OUT,
+        });
+    }
+    private fade_out(actor: Clutter.Actor) {
+        if (!actor.visible) return;
+        actor.remove_all_transitions();
+        actor.ease({
+            opacity: 0,
+            duration: 250,
+            mode: Clutter.AnimationMode.EASE_IN,
+            onComplete: () => actor.hide(),
+        });
     }
 
     // returns the tab button border radius based on it's order.
@@ -424,7 +453,10 @@ export class Stack {
         const window = this.ext.windows.get(c.entity);
         if (window) {
             for (const s of c.signals) window.meta.disconnect(s);
-            if (this.workspace === this.ext.active_workspace()) window.meta.get_compositor_private<Clutter.Actor>()?.show();
+            if (this.workspace === this.ext.active_workspace()) {
+                const actor = window.meta.get_compositor_private<Clutter.Actor>();
+                if (actor) this.fade_in(actor);
+            }
         }
 
         c.signals = [];
@@ -461,7 +493,8 @@ export class Stack {
             if (this.workspace === this.ext.active_workspace()) {
                 const win = this.ext.windows.get(c.entity);
                 if (win) {
-                    win.meta.get_compositor_private<Clutter.Actor>()?.show();
+                    const actor = win.meta.get_compositor_private<Clutter.Actor>();
+                    if (actor) this.fade_in(actor);
                     win.stack = null;
                 }
             }
@@ -580,9 +613,9 @@ export class Stack {
 
             if (Ecs.entity_eq(window.entity, this.active)) {
                 this.active_connect(window.meta, window.entity);
-                actor.show();
+                this.fade_in(actor);
             } else {
-                actor.hide();
+                this.fade_out(actor);
             }
 
             this.watch_signals(this.active_id, c.button, window);
@@ -604,7 +637,7 @@ export class Stack {
             return;
         }
 
-        actor.show();
+        this.fade_in(actor);
 
         const parent = actor.get_parent();
 
@@ -627,25 +660,23 @@ export class Stack {
         }
     }
 
-    permitted_to_show(workspace?: number): boolean {
-        const active_workspace = workspace ?? global.workspace_manager.get_active_workspace_index();
-        const primary = global.display.get_primary_monitor();
-        const only_primary = this.ext.settings.workspaces_only_on_primary();
-
-        return active_workspace === this.workspace || (only_primary && this.monitor != primary);
+    /** Whether the stack is permitted to show on the active workspace. */
+    permitted_to_show(): boolean {
+        const active_workspace = global.workspace_manager.get_active_workspace_index();
+        return this.workspace == active_workspace;
     }
 
     reset_visibility(permitted: boolean) {
         let idx = 0;
 
         for (const c of this.tabs) {
-            this.actor_exec(idx, c.entity, (actor) => {
+            this.window_exec(idx, c.entity, (window) => {
+                const actor = window.meta.get_compositor_private<Clutter.Actor>();
                 if (permitted && this.active_id === idx) {
-                    actor.show();
-                    return;
+                    this.fade_in(actor);
+                } else {
+                    this.fade_out(actor);
                 }
-
-                actor.hide();
             });
 
             idx += 1;
@@ -717,7 +748,7 @@ export class Stack {
             this.window_exec(comp, entity, (window) => {
                 const actor = window.meta.get_compositor_private<Clutter.Actor>();
                 if (actor) {
-                    actor.show();
+                    this.fade_in(actor);
                     window.activate(false);
 
                     this.reposition();
@@ -755,12 +786,6 @@ export class Stack {
 
     private window_changed() {
         this.ext.show_border_on_focused();
-    }
-
-    private actor_exec(comp: number, entity: Entity, func: (window: Clutter.Actor) => void) {
-        this.window_exec(comp, entity, (window) => {
-            func(window.meta.get_compositor_private<Clutter.Actor>());
-        });
     }
 
     private window_exec(comp: number, entity: Entity, func: (window: ShellWindow) => void) {
