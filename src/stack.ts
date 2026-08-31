@@ -140,7 +140,7 @@ const TabButton = GObject.registerClass(
                     this._styles.class = 'pop-shell-tab pop-shell-tab-active';
                     this._styles.bg = hint_color_rgba;
                     this._styles.fg = utils.is_dark(hint_color_rgba) ? 'white' : 'black';
-                    this._styles.border_color = '#999999';
+                    this._styles.border_color = this._styles.bg;
                     break;
                 case TabActive.inactive:
                     // Don't dismiss urgent state
