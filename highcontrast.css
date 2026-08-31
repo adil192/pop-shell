@@ -17,7 +17,7 @@
     border-width: 3px;
 }
 
-.pop-shell-search-element:select{
+.pop-shell-search-element:select {
     background: #fff;
     border-radius: 5px;
     color: #000;
@@ -39,21 +39,27 @@
 }
 
 .pop-shell-tab {
-    border: 1px solid #333;
-    color: #000;
+    border: 1px solid #000000;
     padding: 0 1em;
+    font-weight: 500;
 }
 
 .pop-shell-tab-active {
-    background: #FBB86C;
+    background: #623400;
+    color: #ffffff;
+    border-color: #ffffff;
 }
 
 .pop-shell-tab-inactive {
-    background: #9B8E8A;
+    background: #ffffff;
+    color: #000000;
+    border-color: #000000;
 }
 
 .pop-shell-tab-urgent {
-    background: #D00;
+    background: #880000;
+    color: #ffffff;
+    border-color: #ffffff;
 }
 
 .pop-shell-entry:indeterminate {

@@ -12,13 +12,11 @@ import GObject from 'gi://GObject';
 import Meta from 'gi://Meta';
 import Mtk from 'gi://Mtk';
 import St from 'gi://St';
+import { ExtensionSettings } from './settings.js';
 
-const ACTIVE_TAB = 'pop-shell-tab pop-shell-tab-active';
-const INACTIVE_TAB = 'pop-shell-tab pop-shell-tab-inactive';
-const URGENT_TAB = 'pop-shell-tab pop-shell-tab-urgent';
-const INACTIVE_TAB_STYLE = '#9B8E8A';
+enum TabActive { active, inactive, urgent }
 
-export const TAB_HEIGHT: number = 24;
+export const TAB_HEIGHT_UNSCALED = 32 as const;
 
 interface Tab {
     active: boolean;
@@ -60,6 +58,8 @@ const ContainerButton = GObject.registerClass(
 
 interface TabButton extends St.Button {
     set_title: (title: string) => void;
+    set_active: (style: TabActive, settings: ExtensionSettings) => void;
+    set_border_radius: (border_radius: string) => void;
 }
 
 const TabButton = GObject.registerClass(
@@ -69,9 +69,20 @@ const TabButton = GObject.registerClass(
     class TabButton extends St.Button {
         _title?: St.Label;
 
+        private _styles: {
+            class: string;
+            bg?: string,
+            fg?: string,
+            border_color?: string;
+            border_radius: string;
+        } = {
+                class: 'pop-shell-tab pop-shell-tab-inactive',
+                border_radius: '4px',
+            };
+
         _init(window: ShellWindow) {
-            const icon = window.icon(window.ext, 24);
-            icon.set_x_align(Clutter.ActorAlign.START);
+            const icon = window.icon(window.ext, TAB_HEIGHT_UNSCALED * 0.5);
+            icon.set_x_align(Clutter.ActorAlign.END);
 
             const label = new St.Label({
                 y_expand: true,
@@ -90,7 +101,7 @@ const TabButton = GObject.registerClass(
             const close_button = new ContainerButton(
                 new St.Icon({
                     icon_name: 'window-close-symbolic',
-                    icon_size: 24,
+                    icon_size: TAB_HEIGHT_UNSCALED * 0.5,
                     y_align: Clutter.ActorAlign.CENTER,
                 }),
             );
@@ -121,6 +132,47 @@ const TabButton = GObject.registerClass(
                 this._title.text = text;
             }
         }
+
+        set_active(style: TabActive, settings: ExtensionSettings) {
+            const hint_color_rgba = settings.hint_color_rgba();
+            switch (style) {
+                case TabActive.active:
+                    this._styles.class = 'pop-shell-tab pop-shell-tab-active';
+                    this._styles.bg = hint_color_rgba;
+                    this._styles.fg = utils.is_dark(hint_color_rgba) ? 'white' : 'black';
+                    this._styles.border_color = '#999999';
+                    break;
+                case TabActive.inactive:
+                    this._styles.class = 'pop-shell-tab pop-shell-tab-inactive';
+                    this._styles.bg = undefined;
+                    this._styles.fg = undefined;
+                    this._styles.border_color = undefined;
+                    break;
+                case TabActive.urgent:
+                    this._styles.class = 'pop-shell-tab pop-shell-tab-urgent';
+                    this._styles.bg = undefined;
+                    this._styles.fg = undefined;
+                    this._styles.border_color = undefined;
+                    break;
+            }
+            this._update_style();
+        }
+
+        set_border_radius(border_radius: string) {
+            this._styles.border_radius = border_radius;
+            this._update_style();
+        }
+
+        private _update_style() {
+            let style = '';
+            if (this._styles.bg) style += `background: ${this._styles.bg}; `;
+            if (this._styles.fg) style += `color: ${this._styles.fg}; `;
+            if (this._styles.border_color) style += `border-color: ${this._styles.border_color}; `;
+            style += `border-radius: ${this._styles.border_radius}; `;
+
+            this.set_style_class_name(this._styles.class);
+            this.set_style(style);
+        }
     },
 );
 
@@ -144,7 +196,7 @@ export class Stack {
 
     buttons: a.Arena<TabButton> = new Arena();
 
-    tabs_height: number = TAB_HEIGHT;
+    tabs_height: number;
 
     stack_rect: Mtk.Rectangle = new Mtk.Rectangle({ x: 0, y: 0, width: 0, height: 0 });
 
@@ -161,7 +213,7 @@ export class Stack {
         this.active = active;
         this.monitor = monitor;
         this.workspace = workspace;
-        this.tabs_height = TAB_HEIGHT * this.ext.dpi;
+        this.tabs_height = TAB_HEIGHT_UNSCALED * this.ext.dpi;
 
         this.widgets = stack_widgets_new();
 
@@ -180,6 +232,7 @@ export class Stack {
         const active = Ecs.entity_eq(entity, this.active);
 
         const button = new TabButton(window);
+        button.natural_height = this.tabs_height;
         const id = this.buttons.insert(button);
 
         const tab: Tab = { active, entity, signals: [], button: id, button_signal: null };
@@ -231,7 +284,7 @@ export class Stack {
         let id = 0;
 
         for (const [idx, component] of this.tabs.entries()) {
-            let name;
+            let tab_active: TabActive;
 
             this.window_exec(id, component.entity, (window) => {
                 const actor = window.meta.get_compositor_private<Clutter.Actor>();
@@ -239,28 +292,18 @@ export class Stack {
                 if (Ecs.entity_eq(entity, component.entity)) {
                     this.active_id = id;
                     component.active = true;
-                    name = ACTIVE_TAB;
+                    tab_active = TabActive.active;
                     if (actor) actor.show();
                 } else {
                     component.active = false;
-                    name = INACTIVE_TAB;
+                    tab_active = TabActive.inactive;
                     if (actor) actor.hide();
                 }
 
                 const button = this.buttons.get(component.button);
                 if (button) {
-                    button.set_style_class_name(name);
-                    let tab_color: string;
-                    if (component.active) {
-                        const settings = this.ext.settings;
-                        const color_value = settings.hint_color_rgba();
-                        tab_color = `${color_value}; color: ${utils.is_dark(color_value) ? 'white' : 'black'}`;
-                    } else {
-                        tab_color = `${INACTIVE_TAB_STYLE}`;
-                    }
-
-                    const tab_border_radius = this.get_tab_border_radius(idx);
-                    button.set_style(`background: ${tab_color}; border-radius: ${tab_border_radius};`);
+                    button.set_active(tab_active, this.ext.settings);
+                    button.set_border_radius(this.get_tab_border_radius(idx, component.active));
                 }
             });
 
@@ -272,19 +315,33 @@ export class Stack {
 
     // returns the tab button border radius based on it's order.
     // Only curving the corners on the edges.
-    private get_tab_border_radius(idx: number): string {
-        let result = `0px 0px 0px 0px`;
+    private get_tab_border_radius(idx: number, active: boolean): string {
+        const sharp = Math.round(this.tabs_height * 0.1);
+        const curved = Math.clamp(
+            // the minus 4px is to accomodate the inner radius being tighter
+            this.ext.settings.active_hint_border_radius() - 4,
+            // non-negative
+            sharp,
+            // don't fully round
+            this.tabs_height * 0.4,
+        );
 
-        // the minus 4px is to accomodate the inner radius being tighter
-        let radius = Math.max(0, this.ext.settings.active_hint_border_radius() - 4);
-        // only allow a radius up to half the tab_height
-        radius = Math.min(radius, Math.trunc(this.tabs_height / 2));
-        // set each corner's radius based on it's order
-        if (this.tabs.length === 1) result = `${radius}px`;
-        else if (idx === 0) result = `${radius}px 0px 0px ${radius}px`;
-        else if (idx === this.tabs.length - 1) result = `0px ${radius}px ${radius}px 0px`;
+        let tl = sharp, tr = sharp, br = sharp, bl = sharp;
+        if (active) {
+            // active tab, curve all corners
+            tl = curved; tr = curved; br = curved; bl = curved;
+        } else if (this.tabs.length <= 1) {
+            // only one tab, curve all corners
+            tl = curved; tr = curved; br = curved; bl = curved;
+        } else if (idx <= 0) {
+            // first tab, curve left corners
+            tl = curved; bl = curved;
+        } else if (idx >= this.tabs.length - 1) {
+            // last tab, curve right corners
+            tr = curved; br = curved;
+        }
 
-        return result;
+        return `${tl}px ${tr}px ${br}px ${bl}px`;
     }
 
     /** Connects `on_window_changed` callbacks to the newly-active window */
@@ -338,29 +395,16 @@ export class Stack {
         if (button) {
             const change_id = settings.ext.connect('changed', (_, key) => {
                 if (key === 'hint-color-rgba') {
-                    this.change_tab_color(tab);
+                    const active = Ecs.entity_eq(tab.entity, this.active);
+                    button.set_active(active ? TabActive.active : TabActive.inactive, settings);
                 }
                 return false;
             });
             button.connect('destroy', () => {
                 settings.ext.disconnect(change_id);
             });
-        }
-        this.change_tab_color(tab);
-    }
-
-    private change_tab_color(tab: Tab) {
-        const settings = this.ext.settings;
-        const button = this.buttons.get(tab.button);
-        if (button) {
-            let tab_color: string;
-            if (Ecs.entity_eq(tab.entity, this.active)) {
-                const color_value = settings.hint_color_rgba();
-                tab_color = `background: ${color_value}; color: ${utils.is_dark(color_value) ? 'white' : 'black'}`;
-            } else {
-                tab_color = `background: ${INACTIVE_TAB_STYLE}`;
-            }
-            button.set_style(tab_color);
+            const active = Ecs.entity_eq(tab.entity, this.active);
+            button.set_active(active ? TabActive.active : TabActive.inactive, settings);
         }
     }
 
@@ -639,7 +683,7 @@ export class Stack {
 
         this.rect = rect;
 
-        this.tabs_height = TAB_HEIGHT * this.ext.dpi;
+        this.tabs_height = TAB_HEIGHT_UNSCALED * this.ext.dpi;
 
         this.stack_rect = new Mtk.Rectangle({
             x: rect.x,
@@ -676,10 +720,9 @@ export class Stack {
                     this.reposition();
 
                     for (const comp of this.tabs) {
-                        this.buttons.get(comp.button)?.set_style_class_name(INACTIVE_TAB);
+                        this.buttons.get(comp.button)?.set_active(TabActive.inactive, this.ext.settings);
                     }
-
-                    widget.set_style_class_name(ACTIVE_TAB);
+                    widget.set_active(TabActive.active, this.ext.settings);
                 }
             });
         });
@@ -700,7 +743,7 @@ export class Stack {
             window.meta.connect('notify::urgent', () => {
                 this.window_exec(comp, entity, (window) => {
                     if (!window.meta.has_focus()) {
-                        this.buttons.get(button)?.set_style_class_name(URGENT_TAB);
+                        this.buttons.get(button)?.set_active(TabActive.urgent, this.ext.settings);
                     }
                 });
             }),

@@ -1145,7 +1145,7 @@ export class Ext extends Ecs.System<ExtEvent> {
                     const fork = forest.forks.get(fork_entity);
                     if (fork) {
                         if (win.stack) {
-                            const tab_dimension = this.dpi * stack.TAB_HEIGHT;
+                            const tab_dimension = this.dpi * stack.TAB_HEIGHT_UNSCALED;
                             crect.height += tab_dimension;
                             crect.y -= tab_dimension;
                         }
