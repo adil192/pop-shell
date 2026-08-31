@@ -332,7 +332,7 @@ export class Stack {
         actor.show();
         actor.ease({
             opacity: 255,
-            duration: 150,
+            duration: 150 * (1 - actor.opacity / 255),
             mode: Clutter.AnimationMode.EASE_OUT,
         });
     }
@@ -341,7 +341,7 @@ export class Stack {
         actor.remove_all_transitions();
         actor.ease({
             opacity: 0,
-            duration: 250,
+            duration: 250 * (actor.opacity / 255),
             mode: Clutter.AnimationMode.EASE_IN,
             onComplete: () => actor.hide(),
         });
