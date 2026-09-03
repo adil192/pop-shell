@@ -19,8 +19,6 @@ INSTALLNAME = $(UUID)
 
 PROJECTS = color_dialog floating_exceptions
 
-$(info UUID is "$(UUID)")
-
 .PHONY: all clean install zip-file
 
 sources = src/*.ts *.css
@@ -37,8 +35,7 @@ configure:
 compile: node_modules/.package-lock.json $(sources) clean
 	env PROJECTS="$(PROJECTS)" ./scripts/transpile.sh
 
-# Rebuild, install, reconfigure local settings, restart shell, and listen to journalctl logs
-debug: depcheck compile install configure enable restart-shell listen
+debug: depcheck compile install configure enable nested
 
 depcheck:
 	@echo depcheck
@@ -55,6 +52,13 @@ enable:
 
 disable:
 	gnome-extensions disable "pop-shell@system76.com"
+
+nested:
+	@if [ "$$(gnome-shell --version | awk '{print int($$3)}')" -ge 49 ]; then \
+		dbus-run-session gnome-shell --devkit --wayland; \
+	else \
+		dbus-run-session gnome-shell --nested --wayland; \
+	fi
 
 listen:
 	journalctl -o cat -n 0 -f "$$(which gnome-shell)" | grep -v warning

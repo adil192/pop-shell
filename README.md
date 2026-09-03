@@ -226,11 +226,7 @@ Please install the following as dependencies when developing:
 - [`Node.js`](https://nodejs.org/en/) LTS+ (v22+)
 - `mutter-devkit` (optional, for testing)
 
-While working on the shell, you can test your changes by...:
-- Wayland: Running `dbus-run-session gnome-shell --devkit --wayland` to start a nested session. See the documentation at https://gjs.guide/extensions/development/debugging.html.
-- X11: Running `make debug` to restart GNOME Shell with extra logging.
-
-[Discussions welcome on Pop Chat](https://chat.pop-os.org/pop-os/channels/development)
+To test your changes while working on the shell, run `make debug` to start a nested GNOME session. See the documentation at https://gjs.guide/extensions/development/debugging.html.
 
 ## License
 
