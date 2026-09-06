@@ -18,7 +18,7 @@ Summary of my changes:
 - Features:
   - Added GNOME 51 support.
   - Added a setting to stop Pop Shell from resetting your windows' positions when untiling.
-  - Restyled the stack bar: the tabs are bigger and easier to click, and look less industrial.
+  - Adwaita-themed tab bar for stacked windows: the tabs are bigger and easier to click.
   - Added a fade transition when switching between stacked windows.
 - Fixes:
   - Fixed some tiling jank with a fixed [`area_right` function](https://github.com/adil192/pop-shell/blob/63f0fa4df67182119b2c54b2377f1290e2ec2063/src/fork.ts#L77).
