@@ -19,5 +19,6 @@ echo Packing into _build/...
 rm -rf _build && mkdir _build
 cp -r metadata.json icons schemas target/* _build/
 find _build -name "*.tsbuildinfo" -delete
+find _build -name "*.d.ts" -delete
 ls _build
 echo

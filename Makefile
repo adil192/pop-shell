@@ -26,7 +26,7 @@ sources = src/*.ts *.scss
 all: depcheck compile
 
 clean:
-	rm -rf _build target tsconfig.tsbuildinfo
+	rm -rf _build target .eslintcache tsconfig.tsbuildinfo
 
 # Configure local settings on system
 configure:

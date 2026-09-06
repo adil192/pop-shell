@@ -55,7 +55,7 @@ const TabButton = GObject.registerClass(
     class TabButton extends St.Button {
         _title?: St.Label;
 
-        private _styles: {
+        _styles: {
             class: string;
         } = {
                 class: 'pop-shell-tab pop-shell-tab-inactive',
@@ -132,7 +132,7 @@ const TabButton = GObject.registerClass(
             this._update_style(settings);
         }
 
-        private _update_style(settings: ExtensionSettings) {
+        _update_style(settings: ExtensionSettings) {
             const hint_color_rgba = settings.hint_color_rgba();
             const style = `--accent-color: ${hint_color_rgba}; `;
 
