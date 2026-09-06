@@ -48,6 +48,7 @@ export const DEFAULT_FLOAT_RULES: Array<FloatRule> = [
     { class: 'Zotero', title: 'Quick Format Citation' },
     { class: 'firefox', title: '^(?!.*Mozilla Firefox).*$' },
     { class: 'org.mozilla.firefox', title: 'Picture-in-Picture' },
+    { class: 'org.mozilla.firefox', title: 'About Mozilla Firefox' },
     { class: 'gnome-screenshot' },
     { class: 'ibus-.*' },
     { class: 'jetbrains-toolbox' },
