@@ -229,6 +229,7 @@ Due to the risky nature of plain JavaScript, this GNOME Shell extension is writt
 Please install the following as dependencies when developing:
 
 - [`Node.js`](https://nodejs.org/en/) LTS+ (v22+)
+- [`sass`](https://sass-lang.com/install/)
 - `mutter-devkit` (optional, for testing)
 
 To test your changes while working on the shell, run `make debug` to start a nested GNOME session. See the documentation at https://gjs.guide/extensions/development/debugging.html.

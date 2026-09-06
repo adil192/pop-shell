@@ -4,7 +4,6 @@ import type { ShellWindow } from './window.js';
 
 import * as Ecs from './ecs.js';
 import * as a from './arena.js';
-import * as utils from './utils.js';
 
 const Arena = a.Arena;
 import Clutter from 'gi://Clutter';
@@ -16,7 +15,10 @@ import { ExtensionSettings } from './settings.js';
 
 enum TabActive { active, inactive, urgent }
 
-export const TAB_HEIGHT_UNSCALED = 32 as const;
+export const TAB_HEIGHT_UNSCALED = 43 as const;
+
+/** Space between the tab bar and the window. This should be subtracted from TAB_HEIGHT_UNSCALED. */
+const TAB_SEPARATION_UNSCALED = 3 as const;
 
 interface Tab {
     active: boolean;
@@ -41,25 +43,9 @@ function stack_widgets_new(): StackWidgets {
     return { tabs };
 }
 
-const ContainerButton = GObject.registerClass(
-    {
-        Signals: { activate: {} },
-    },
-    class ImageButton extends St.Button {
-        _init(icon: St.Icon) {
-            super._init({
-                child: icon,
-                x_expand: true,
-                y_expand: true,
-            });
-        }
-    },
-);
-
 interface TabButton extends St.Button {
     set_title: (title: string) => void;
     set_active: (style: TabActive, settings: ExtensionSettings) => void;
-    set_border_radius: (border_radius: string) => void;
 }
 
 const TabButton = GObject.registerClass(
@@ -71,50 +57,45 @@ const TabButton = GObject.registerClass(
 
         private _styles: {
             class: string;
-            bg?: string,
-            fg?: string,
-            border_color?: string;
-            border_radius: string;
         } = {
                 class: 'pop-shell-tab pop-shell-tab-inactive',
-                border_radius: '4px',
             };
 
         _init(window: ShellWindow) {
-            const icon = window.icon(window.ext, TAB_HEIGHT_UNSCALED * 0.5);
-            icon.set_x_align(Clutter.ActorAlign.END);
+            const icon = window.icon(Math.floor(TAB_HEIGHT_UNSCALED * 0.4));
+            icon.set_x_align(Clutter.ActorAlign.START);
+            icon.set_style('padding: 4px; margin-left: 4px;');
 
-            const label = new St.Label({
+            const title = new St.Label({
                 y_expand: true,
-                x_align: Clutter.ActorAlign.START,
+                x_expand: true,
+                x_align: Clutter.ActorAlign.CENTER,
                 y_align: Clutter.ActorAlign.CENTER,
-                style: 'padding-left: 8px',
+                style: 'padding-left: 4px; padding-right: 4px;',
+                text: window.title(),
             });
 
-            label.text = window.title();
+            const close_button = new St.Button({
+                child: new St.Icon({
+                    icon_name: 'window-close-symbolic',
+                    icon_size: Math.floor(TAB_HEIGHT_UNSCALED * 0.4),
+                    y_align: Clutter.ActorAlign.CENTER,
+                }),
+                y_expand: true,
+                x_align: Clutter.ActorAlign.END,
+                y_align: Clutter.ActorAlign.CENTER,
+                style_class: 'pop-window-close',
+            });
+            close_button.connect('clicked', () => {
+                window.meta.delete(global.get_current_time());
+            });
 
             const container = new St.BoxLayout({
                 y_expand: true,
                 y_align: Clutter.ActorAlign.CENTER,
             });
-
-            const close_button = new ContainerButton(
-                new St.Icon({
-                    icon_name: 'window-close-symbolic',
-                    icon_size: TAB_HEIGHT_UNSCALED * 0.5,
-                    y_align: Clutter.ActorAlign.CENTER,
-                }),
-            );
-
-            close_button.connect('clicked', () => {
-                window.meta.delete(global.get_current_time());
-            });
-
-            close_button.set_x_align(Clutter.ActorAlign.END);
-            close_button.set_y_align(Clutter.ActorAlign.CENTER);
-
             container.add_child(icon);
-            container.add_child(label);
+            container.add_child(title);
             container.add_child(close_button);
 
             super._init({
@@ -124,7 +105,7 @@ const TabButton = GObject.registerClass(
                 y_align: Clutter.ActorAlign.CENTER,
             });
 
-            this._title = label;
+            this._title = title;
         }
 
         set_title(text: string) {
@@ -136,42 +117,24 @@ const TabButton = GObject.registerClass(
         set_active(style: TabActive, settings: ExtensionSettings) {
             switch (style) {
                 case TabActive.active:
-                    const hint_color_rgba = settings.hint_color_rgba();
                     this._styles.class = 'pop-shell-tab pop-shell-tab-active';
-                    this._styles.bg = hint_color_rgba;
-                    this._styles.fg = utils.is_dark(hint_color_rgba) ? 'white' : 'black';
-                    this._styles.border_color = this._styles.bg;
                     break;
                 case TabActive.inactive:
                     // Don't dismiss urgent state
                     if (this._styles.class.includes('pop-shell-tab-urgent')) return;
 
                     this._styles.class = 'pop-shell-tab pop-shell-tab-inactive';
-                    this._styles.bg = undefined;
-                    this._styles.fg = undefined;
-                    this._styles.border_color = undefined;
                     break;
                 case TabActive.urgent:
                     this._styles.class = 'pop-shell-tab pop-shell-tab-urgent';
-                    this._styles.bg = undefined;
-                    this._styles.fg = undefined;
-                    this._styles.border_color = undefined;
                     break;
             }
-            this._update_style();
+            this._update_style(settings);
         }
 
-        set_border_radius(border_radius: string) {
-            this._styles.border_radius = border_radius;
-            this._update_style();
-        }
-
-        private _update_style() {
-            let style = '';
-            if (this._styles.bg) style += `background: ${this._styles.bg}; `;
-            if (this._styles.fg) style += `color: ${this._styles.fg}; `;
-            if (this._styles.border_color) style += `border-color: ${this._styles.border_color}; `;
-            style += `border-radius: ${this._styles.border_radius}; `;
+        private _update_style(settings: ExtensionSettings) {
+            const hint_color_rgba = settings.hint_color_rgba();
+            const style = `--accent-color: ${hint_color_rgba}; `;
 
             this.set_style_class_name(this._styles.class);
             this.set_style(style);
@@ -199,7 +162,8 @@ export class Stack {
 
     buttons: a.Arena<TabButton> = new Arena();
 
-    tabs_height: number;
+    tab_height: number;
+    tab_separation: number;
 
     stack_rect: Mtk.Rectangle = new Mtk.Rectangle({ x: 0, y: 0, width: 0, height: 0 });
 
@@ -216,7 +180,8 @@ export class Stack {
         this.active = active;
         this.monitor = monitor;
         this.workspace = workspace;
-        this.tabs_height = TAB_HEIGHT_UNSCALED * this.ext.dpi;
+        this.tab_height = TAB_HEIGHT_UNSCALED * this.ext.dpi;
+        this.tab_separation = TAB_SEPARATION_UNSCALED * this.ext.dpi;
 
         this.widgets = stack_widgets_new();
 
@@ -235,7 +200,7 @@ export class Stack {
         const active = Ecs.entity_eq(entity, this.active);
 
         const button = new TabButton(window);
-        button.natural_height = this.tabs_height;
+        button.natural_height = this.tab_height - this.tab_separation;
         const id = this.buttons.insert(button);
 
         const tab: Tab = { active, entity, signals: [], button: id, button_signal: null };
@@ -298,7 +263,7 @@ export class Stack {
 
         let id = 0;
 
-        for (const [idx, tab] of this.tabs.entries()) {
+        for (const [_idx, tab] of this.tabs.entries()) {
             let tab_active: TabActive;
 
             this.window_exec(id, tab.entity, (window) => {
@@ -318,7 +283,6 @@ export class Stack {
                 const button = this.buttons.get(tab.button);
                 if (button) {
                     button.set_active(tab_active, this.ext.settings);
-                    button.set_border_radius(this.get_tab_border_radius(idx, tab.active));
                 }
             });
 
@@ -345,37 +309,6 @@ export class Stack {
             mode: Clutter.AnimationMode.EASE_IN,
             onComplete: () => actor.hide(),
         });
-    }
-
-    // returns the tab button border radius based on it's order.
-    // Only curving the corners on the edges.
-    private get_tab_border_radius(idx: number, active: boolean): string {
-        const sharp = Math.round(this.tabs_height * 0.1);
-        const curved = Math.clamp(
-            // the minus 4px is to accomodate the inner radius being tighter
-            this.ext.settings.active_hint_border_radius() - 4,
-            // non-negative
-            sharp,
-            // don't fully round
-            this.tabs_height * 0.4,
-        );
-
-        let tl = sharp, tr = sharp, br = sharp, bl = sharp;
-        if (active) {
-            // active tab, curve all corners
-            tl = curved; tr = curved; br = curved; bl = curved;
-        } else if (this.tabs.length <= 1) {
-            // only one tab, curve all corners
-            tl = curved; tr = curved; br = curved; bl = curved;
-        } else if (idx <= 0) {
-            // first tab, curve left corners
-            tl = curved; bl = curved;
-        } else if (idx >= this.tabs.length - 1) {
-            // last tab, curve right corners
-            tr = curved; br = curved;
-        }
-
-        return `${tl}px ${tr}px ${br}px ${bl}px`;
     }
 
     /** Connects `on_window_changed` callbacks to the newly-active window */
@@ -720,18 +653,19 @@ export class Stack {
 
         this.rect = rect;
 
-        this.tabs_height = TAB_HEIGHT_UNSCALED * this.ext.dpi;
+        this.tab_height = TAB_HEIGHT_UNSCALED * this.ext.dpi;
+        this.tab_separation = TAB_SEPARATION_UNSCALED * this.ext.dpi;
 
         this.stack_rect = new Mtk.Rectangle({
             x: rect.x,
-            y: rect.y - this.tabs_height,
+            y: rect.y - this.tab_height,
             width: rect.width,
-            height: this.tabs_height + rect.height,
+            height: rect.height + this.tab_height,
         });
 
         this.widgets.tabs.x = rect.x;
         this.widgets.tabs.y = this.stack_rect.y;
-        this.widgets.tabs.height = this.tabs_height;
+        this.widgets.tabs.height = this.tab_height - this.tab_separation;
         this.widgets.tabs.width = rect.width;
     }
 

@@ -199,8 +199,8 @@ export class ShellWindow {
         return out;
     }
 
-    icon(_ext: Ext, size: number): Clutter.Actor {
-        let icon = this.window_app.create_icon_texture(size);
+    icon(size: number) {
+        let icon = this.window_app.create_icon_texture(size) as St.Icon;
 
         if (!icon) {
             icon = new St.Icon({
@@ -517,15 +517,10 @@ export class ShellWindow {
         let { x, y, width, height } = this.meta.get_frame_rect();
 
         const border = this.border;
-        let borderSize = this.border_size;
-
         if (border) {
-            if (!(this.is_max_screen() || this.is_snap_edge())) {
-                border.remove_style_class_name('pop-shell-border-maximize');
-            } else {
-                borderSize = 0;
-                border.add_style_class_name('pop-shell-border-maximize');
-            }
+            const borderSize = (this.is_max_screen() || this.is_snap_edge())
+                ? 0
+                : this.border_size;
 
             const stack_number = this.stack;
             let dimensions = null;
@@ -533,7 +528,7 @@ export class ShellWindow {
             if (stack_number !== null) {
                 const stack = this.ext.auto_tiler?.forest.stacks.get(stack_number);
                 if (stack) {
-                    let stack_tab_height = stack.tabs_height;
+                    let stack_tab_height = stack.tab_height;
 
                     if (borderSize === 0 || this.grab) {
                         // not in max screen state

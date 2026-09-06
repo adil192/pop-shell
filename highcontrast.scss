@@ -1,0 +1,22 @@
+@use "_base" with ($headerbar-bg-color: white,
+    $headerbar-fg-color: black,
+    $warning-fg-color: black,
+    $active-tab-bg-color: rgba(0, 0, 0, .2),
+);
+
+.pop-shell-entry:indeterminate {
+    font-style: italic;
+}
+
+.pop-shell-tab {
+    border: 1px solid;
+}
+
+.pop-shell-tab-active {
+    background: black;
+    color: white;
+}
+
+.pop-shell-tab-active:hover {
+    background: #666;
+}

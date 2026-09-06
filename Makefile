@@ -21,7 +21,7 @@ PROJECTS = color_dialog floating_exceptions
 
 .PHONY: all clean install zip-file
 
-sources = src/*.ts *.css
+sources = src/*.ts *.scss
 
 all: depcheck compile
 
