@@ -1,13 +1,29 @@
 #!/bin/bash
 set -e
 
+use_tsc() {
+    if command -v tsc >/dev/null 2>&1; then
+        tsc "$@"
+    else
+        npx tsc "$@"
+    fi
+}
+use_sass() {
+    if command -v sass >/dev/null 2>&1; then
+        sass "$@"
+    else
+        echo "Warning: Using npm sass. Install dart sass for faster builds: https://sass-lang.com/install/"
+        npx sass "$@"
+    fi
+}
+
 echo Compiling into target/...
 glib-compile-schemas schemas &
 for proj in ${PROJECTS}; do
-    npx tsc --p src/"${proj}"
+    use_tsc --p src/"${proj}"
 done
-npx tsc
-sass --no-source-map \
+use_tsc
+use_sass --no-source-map \
     light.scss:target/light.css \
     dark.scss:target/dark.css \
     highcontrast.scss:target/highcontrast.css
